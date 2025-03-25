@@ -3,7 +3,6 @@ import re
 
 print('Number of arguments:', len(sys.argv), 'arguments.')
 print('Argument List:', str(sys.argv))
-filename = sys.argv[1]
 
 #initialisation
 nodes = {}
@@ -11,10 +10,10 @@ edges = {}
 origin = None
 destinations = []
 
-def loadproblem():
+def loadproblem(filename): # Changed this so it will accept filename passed from search.py
     with open(filename) as f:
         mydict = {}
-        curent_section = None
+        current_section = None
         for line in f:
             line = line.strip()
 
@@ -45,8 +44,10 @@ def loadproblem():
                 destinations = list(map(int, line.split(';'))) #split at the semicolon 
     return origin, destinations #have to return these because they're local unlike node + edges 
 
-(origin, destinations) = loadproblem()
-print("Nodes: ", nodes)
-print("Edges: ", edges)
-print("Origin: ", origin)
-print("Destination: ", destinations)
+# Commenting the test lines out - now in search.py
+
+# (origin, destinations) = loadproblem()
+# print("Nodes: ", nodes)
+# print("Edges: ", edges)
+# print("Origin: ", origin)
+# print("Destination: ", destinations)
