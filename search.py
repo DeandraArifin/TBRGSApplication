@@ -1,4 +1,6 @@
 import sys
+
+from matplotlib.font_manager import weight_dict
 from loadproblem import nodes, edges
 
 def dfs(origin, destination):
@@ -6,6 +8,20 @@ def dfs(origin, destination):
     return None, 0, []
 
     # Rest of search logic to be implemented also.
+
+#reformats the edges and weights so you can see the children nodes and their path costs per node
+def convert_to_adjacency_list(edges):
+      adjacency_list = {}
+      for(source_node, dest_node), weight in edges.items():
+            if source_node not in adjacency_list:
+                  adjacency_list[source_node] = {}
+            if dest_node not in adjacency_list:
+                  adjacency_list[dest_node] = {}
+            
+            adjacency_list[source_node][dest_node] = weight
+      return adjacency_list
+
+
 
 def main():
         
@@ -25,9 +41,15 @@ def main():
         print("Edges:", loadproblem.edges)
         print("Origin:", origin)
         print("Destination:", destination)
+        
+        #calls the reformatting of the edges
+        adjacency_list = convert_to_adjacency_list(loadproblem.edges)
+        print(adjacency_list)
 
         result = None # Neutral placeholder for result variable to prevent weird errors.
-
+        
+       
+        
         if method == 'DFS':
               result = dfs(origin, destination)
         elif method == 'BFS':
