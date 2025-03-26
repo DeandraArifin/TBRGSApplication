@@ -1,8 +1,12 @@
 import sys
 
 from matplotlib.font_manager import weight_dict
+from nbformat import convert
 from loadproblem import nodes, edges
 from utils import *
+
+#might need this as a global variable to build something like the romania map
+route = {}
 
 class Problem:
     """The abstract class for a formal problem. You should subclass
@@ -120,8 +124,78 @@ class Node:
         # object itself to quickly search a node
         # with the same state in a Hash Table
         return hash(self.state)
+  
+  
+class Graph:
 
 
+    def __init__(self, graph_dict=None, directed=True):
+        self.graph_dict = graph_dict or {}
+        self.directed = directed
+        if not directed:
+            self.make_undirected()
+
+    def make_undirected(self):
+        """Make a digraph into an undirected graph by adding symmetric edges."""
+        for a in list(self.graph_dict.keys()):
+            for (b, dist) in self.graph_dict[a].items():
+                self.connect1(b, a, dist)
+
+    def connect(self, A, B, distance=1):
+        """Add a link from A and B of given distance, and also add the inverse
+        link if the graph is undirected."""
+        self.connect1(A, B, distance)
+        if not self.directed:
+            self.connect1(B, A, distance)
+
+    def connect1(self, A, B, distance):
+        """Add a link from A to B of given distance, in one direction only."""
+        self.graph_dict.setdefault(A, {})[B] = distance
+
+    def get(self, a, b=None):
+        """Return a link distance or a dict of {node: distance} entries.
+        .get(a,b) returns the distance or None;
+        .get(a) returns a dict of {node: distance} entries, possibly {}."""
+        links = self.graph_dict.setdefault(a, {})
+        if b is None:
+            return links
+        else:
+            return links.get(b)
+
+    def nodes(self):
+        """Return a list of nodes in the graph."""
+        s1 = set([k for k in self.graph_dict.keys()])
+        s2 = set([k2 for v in self.graph_dict.values() for k2, v2 in v.items()])
+        nodes = s1.union(s2)
+        return list(nodes)
+  
+#create the class for the graph problem, initial and goal states will later be initialized when we define the running function to run in main
+class GraphProblem(Problem):
+    """The problem of searching a graph from one node to another."""
+
+    def __init__(self, initial, goal, graph):
+        super().__init__(initial, goal)
+        self.graph = graph
+
+    def actions(self, A):
+        """The actions at a graph node are just its neighbors."""
+        return list(self.graph.get(A).keys())
+
+    def result(self, state, action):
+        """The result of going to a neighbor is just that neighbor."""
+        return action
+
+    def path_cost(self, cost_so_far, A, action, B):
+        return cost_so_far + (self.graph.get(A, B) or np.inf)
+
+    def find_min_edge(self):
+        """Find minimum value of edges."""
+        m = np.inf
+        for d in self.graph.graph_dict.values():
+            local_min = min(d.values())
+            m = min(m, local_min)
+
+        return m
 
 
 def dfs(origin, destination):
@@ -143,6 +217,13 @@ def convert_to_adjacency_list(edges):
       return adjacency_list
 
 
+# myMap = adjacency_list
+# myMap.locations = loadproblem.nodes
+
+# def runGraphProblem():
+#       prob1 = GraphProblem(initial = 1, goal = (4, 5), graph = adjacency_list)
+      
+# #the romania_map 
 
 def main():
         
@@ -166,6 +247,7 @@ def main():
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
         print(adjacency_list)
+      
 
         result = None # Neutral placeholder for result variable to prevent weird errors.
         
