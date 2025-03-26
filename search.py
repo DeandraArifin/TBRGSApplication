@@ -271,7 +271,7 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
         path.insert(0, pNode.action)
         pNode = pNode.parent
 
-    print(f"Our Path Finding Problem: The path from init to goal according to {search_algo} is: ", path)
+    print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
     return path
     
 def main():
