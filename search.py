@@ -40,8 +40,10 @@ class Problem:
         state to self.goal or checks for state in self.goal if it is a
         list, as specified in the constructor. Override this method if
         checking against a single self.goal is not enough."""
+        
+        #altered to return the state itself as well
         if isinstance(self.goal, list):
-            return is_in(state, self.goal)
+            return is_in(state, self.goal), state
         else:
             return state == self.goal
 
@@ -229,8 +231,11 @@ def depth_first_graph_search(problem):
     explored = set()
     while frontier:
         node = frontier.pop()
-        if problem.goal_test(node.state):
-            return node
+        #   done to receive both values, first a boolean of whether or not a state is a goal state, the other the state itself
+        goal, goal_state = problem.goal_test(node.state)
+        #   only checks the returned boolean value
+        if goal:
+            return node, explored, goal_state
         explored.add(node.state)
         frontier.extend(child for child in node.expand(problem)
                         if child.state not in explored and child not in frontier)
@@ -243,17 +248,29 @@ def breadth_first_graph_search(problem):
     return graph_search(problem, FIFOQueue())
     """
     node = Node(problem.initial)
-    if problem.goal_test(node.state):
-        return node
-    frontier = deque([node])
+    #   done to receive both values, first a boolean of whether or not a state is a goal state, the other the state itself
+    goal, goal_state = problem.goal_test(node.state)
     explored = set()
+    if goal:
+          #returns the node, explored set (empty if the initial = goal state), and state returned if it's a goal state
+        return node, explored, goal_state
+  
+  # debugging checks
+#     print(f"node = {node}")
+#     print(f"explored = {explored}")
+#     print(f"goal state = {goal_state}")
+#     print(f"goal = {goal}")
+#     breakpoint()
+
+    frontier = deque([node])
     while frontier:
         node = frontier.popleft()
         explored.add(node.state)
         for child in node.expand(problem):
             if child.state not in explored and child not in frontier:
-                if problem.goal_test(child.state):
-                    return child
+                goal_child, goal_state_child = problem.goal_test(child.state)
+                if goal_child:
+                    return child, explored, goal_state_child
                 frontier.append(child)
     return None
 
@@ -262,9 +279,14 @@ def breadth_first_graph_search(problem):
 def runOurGraph(ourGraph, origin, destination, search_algo):
     # Let's start with our path search problem
     prob = GraphProblem(origin, destination, ourGraph)
-    # result = depth_first_tree_search(prob)
-    result = search_algo(prob)
-    print(result)
+    result, explored, goal_state = search_algo(prob)
+    
+    # debugging checks
+#     print(f"result = {result}")
+#     print(f"explored = {explored}")
+#     print(f"goal state = {goal_state}")
+#     breakpoint()
+
     path =[]
     pNode = result
     while pNode.parent:
@@ -272,7 +294,7 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
         pNode = pNode.parent
 
     print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
-    return path
+    return path, explored, goal_state
     
 def main():
         
@@ -288,32 +310,24 @@ def main():
 
 
         # The following is the test lines from loadproblem.py, just to make sure it all worked fine with the changes
-        print("Nodes:", loadproblem.nodes)
-        print("Edges:", loadproblem.edges)
-        print("Origin:", origin)
-        print("Destination:", destination)
+      #   print("Nodes:", loadproblem.nodes)
+      #   print("Edges:", loadproblem.edges)
+      #   print("Origin:", origin)
+      #   print("Destination:", destination)
         
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
-        print(adjacency_list)
+      #   print(adjacency_list)
         
         ourGraph = Graph(adjacency_list)
         ourGraph.locations = loadproblem.nodes
-        print(ourGraph.locations)
-        
-      #   resultFirstRun = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
-      #   print(resultFirstRun)
-        
-      #   resultSecondRun = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
-      #   print(resultSecondRun)
-      #   result = None # Neutral placeholder for result variable to prevent weird errors.
-      #   runOurGraph(ourGraph)
+      #   print(ourGraph.locations)
        
         
         if method == 'DFS':
-              result = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
         elif method == 'BFS':
-              result = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
         else:
               print(f"Method {method} not implemented.")
               result = None
@@ -321,8 +335,16 @@ def main():
 
         if result != None:
             #   goal, nodes_expanded, path = result
+            #   logic is that all nodes created will be the initial, goal + any other nodes in the explored set
+            #   initializes nodes_expanded with the explored set
+              nodes_expanded = explored
+            #   result holds the nodes in the resulting path of the search, so we're adding them to the nodes_expanded list
+              for node in result:
+                    nodes_expanded.add(node)   
+                    
+            
               print(f"{filename} {method}")
-            #   print(f"{goal} {nodes_expanded}")
+              print(f"goal = {goal_state}, nodes created = {nodes_expanded}")
               print(" -> ".join(map(str,result)))
 
               # Should also be correct format as specified in doc
