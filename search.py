@@ -344,7 +344,7 @@ def main():
                     
             
               print(f"{filename} {method}")
-              print(f"goal = {goal_state}, nodes created = {nodes_expanded}")
+              print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
               print(" -> ".join(map(str,result)))
 
               # Should also be correct format as specified in doc
