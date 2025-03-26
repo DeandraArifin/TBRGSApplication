@@ -223,8 +223,41 @@ def convert_to_adjacency_list(edges):
 # def runGraphProblem():
 #       prob1 = GraphProblem(initial = 1, goal = (4, 5), graph = adjacency_list)
       
-# #the romania_map 
+def depth_first_graph_search(problem):
+    """
+    [Figure 3.7]
+    Search the deepest nodes in the search tree first.
+    Search through the successors of a problem to find a goal.
+    The argument frontier should be an empty queue.
+    Does not get trapped by loops.
+    If two paths reach a state, only use the first one.
+    """
+    frontier = [(Node(problem.initial))]  # Stack
 
+    explored = set()
+    while frontier:
+        node = frontier.pop()
+        if problem.goal_test(node.state):
+            return node
+        explored.add(node.state)
+        frontier.extend(child for child in node.expand(problem)
+                        if child.state not in explored and child not in frontier)
+    return None
+
+def runOurGraph(ourGraph):
+    # Let's start with our path search problem
+    prob = GraphProblem(2, (4,5), ourGraph)
+    # result = depth_first_tree_search(prob)
+    result = depth_first_graph_search(prob)
+    print(result)
+    path =[]
+    pNode = result
+    while pNode.parent:
+        path.insert(0, pNode.action)
+        pNode = pNode.parent
+
+    print("Our Path Finding Problem: The path from init to goal according to DFS is: ", path)
+    
 def main():
         
         filename = sys.argv[1]
@@ -247,10 +280,14 @@ def main():
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
         print(adjacency_list)
-      
+        
+        ourGraph = Graph(adjacency_list)
+        ourGraph.locations = loadproblem.nodes
+        print(ourGraph.locations)
 
         result = None # Neutral placeholder for result variable to prevent weird errors.
         
+        runOurGraph(ourGraph)
        
         
         if method == 'DFS':
