@@ -1,5 +1,6 @@
 import sys
 
+from collections import deque
 from matplotlib.font_manager import weight_dict
 from nbformat import convert
 from loadproblem import nodes, edges
@@ -241,8 +242,29 @@ def depth_first_graph_search(problem):
                         if child.state not in explored and child not in frontier)
     return None
 
+def breadth_first_graph_search(problem):
+    """[Figure 3.11]
+    Note that this function can be implemented in a
+    single line as below:
+    return graph_search(problem, FIFOQueue())
+    """
+    node = Node(problem.initial)
+    if problem.goal_test(node.state):
+        return node
+    frontier = deque([node])
+    explored = set()
+    while frontier:
+        node = frontier.popleft()
+        explored.add(node.state)
+        for child in node.expand(problem):
+            if child.state not in explored and child not in frontier:
+                if problem.goal_test(child.state):
+                    return child
+                frontier.append(child)
+    return None
+
 #pass in origin and destination instead of hardcoding it
-def runOurGraph(ourGraph, origin, destination):
+def runOurGraphDFS(ourGraph, origin, destination):
     # Let's start with our path search problem
     prob = GraphProblem(origin, destination, ourGraph)
     # result = depth_first_tree_search(prob)
@@ -255,6 +277,20 @@ def runOurGraph(ourGraph, origin, destination):
         pNode = pNode.parent
 
     print("Our Path Finding Problem: The path from init to goal according to DFS is: ", path)
+    
+def runOurGraphBFS(ourGraph, origin, destination):
+    # Let's start with our path search problem
+    prob = GraphProblem(origin, destination, ourGraph)
+    # result = depth_first_tree_search(prob)
+    result = breadth_first_graph_search(prob)
+    print(result)
+    path =[]
+    pNode = result
+    while pNode.parent:
+        path.insert(0, pNode.action)
+        pNode = pNode.parent
+
+    print("Our Path Finding Problem: The path from init to goal according to BFS is: ", path)
     
 def main():
         
@@ -283,9 +319,11 @@ def main():
         ourGraph.locations = loadproblem.nodes
         print(ourGraph.locations)
         
-        resultFirstRun = runOurGraph(ourGraph, origin, destination)
+        resultFirstRun = runOurGraphDFS(ourGraph, origin, destination)
         print(resultFirstRun)
-
+        
+        resultSecondRun = runOurGraphBFS(ourGraph, origin, destination)
+        print(resultSecondRun)
         result = None # Neutral placeholder for result variable to prevent weird errors.
       #   runOurGraph(ourGraph)
        
