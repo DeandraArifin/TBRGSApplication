@@ -216,12 +216,9 @@ def convert_to_adjacency_list(edges):
             adjacency_list[source_node][dest_node] = weight
       return adjacency_list
 
-
-# myMap = adjacency_list
-# myMap.locations = loadproblem.nodes
-
-# def runGraphProblem():
-#       prob1 = GraphProblem(initial = 1, goal = (4, 5), graph = adjacency_list)
+# adjacency_list = convert_to_adjacency_list(edges)
+# ourGraph = Graph(adjacency_list)
+# ourGraph.locations(nodes)
       
 def depth_first_graph_search(problem):
     """
@@ -244,9 +241,10 @@ def depth_first_graph_search(problem):
                         if child.state not in explored and child not in frontier)
     return None
 
-def runOurGraph(ourGraph):
+#pass in origin and destination instead of hardcoding it
+def runOurGraph(ourGraph, origin, destination):
     # Let's start with our path search problem
-    prob = GraphProblem(2, (4,5), ourGraph)
+    prob = GraphProblem(origin, destination, ourGraph)
     # result = depth_first_tree_search(prob)
     result = depth_first_graph_search(prob)
     print(result)
@@ -284,10 +282,12 @@ def main():
         ourGraph = Graph(adjacency_list)
         ourGraph.locations = loadproblem.nodes
         print(ourGraph.locations)
+        
+        resultFirstRun = runOurGraph(ourGraph, origin, destination)
+        print(resultFirstRun)
 
         result = None # Neutral placeholder for result variable to prevent weird errors.
-        
-        runOurGraph(ourGraph)
+      #   runOurGraph(ourGraph)
        
         
         if method == 'DFS':
