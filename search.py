@@ -10,10 +10,7 @@ from utils import *
 route = {}
 
 class Problem:
-    """The abstract class for a formal problem. You should subclass
-    this and implement the methods actions and result, and possibly
-    __init__, goal_test, and path_cost. Then you will create instances
-    of your subclass and solve them with the various search functions."""
+    """The abstract class for a formal problem."""
 
     def __init__(self, initial, goal=None):
         """The constructor specifies the initial state, and possibly a goal
@@ -65,14 +62,6 @@ class Problem:
 
 
 class Node:
-    """A node in a search tree. Contains a pointer to the parent (the node
-    that this is a successor of) and to the actual state for this node. Note
-    that if a state is arrived at by two paths, then there are two nodes with
-    the same state. Also includes the action that got us to this state, and
-    the total path_cost (also known as g) to reach the node. Other functions
-    may add an f and h value; see best_first_graph_search and astar_search for
-    an explanation of how the f and h values are handled. You will not need to
-    subclass this class."""
 
     def __init__(self, state, parent=None, action=None, path_cost=0):
         """Create a search tree Node, derived from a parent by an action."""
@@ -254,13 +243,6 @@ def breadth_first_graph_search(problem):
     if goal:
           #returns the node, explored set (empty if the initial = goal state), and state returned if it's a goal state
         return node, explored, goal_state
-  
-  # debugging checks
-#     print(f"node = {node}")
-#     print(f"explored = {explored}")
-#     print(f"goal state = {goal_state}")
-#     print(f"goal = {goal}")
-#     breakpoint()
 
     frontier = deque([node])
     while frontier:
@@ -280,12 +262,6 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     # Let's start with our path search problem
     prob = GraphProblem(origin, destination, ourGraph)
     result, explored, goal_state = search_algo(prob)
-    
-    # debugging checks
-#     print(f"result = {result}")
-#     print(f"explored = {explored}")
-#     print(f"goal state = {goal_state}")
-#     breakpoint()
 
     path =[]
     pNode = result
@@ -317,11 +293,13 @@ def main():
         
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
-      #   print(adjacency_list)
         
+        #reformats edges and nodes into a graph constructed like the romania map
+        #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
+        
+        #locations holds the coordinates of the nodes
         ourGraph.locations = loadproblem.nodes
-      #   print(ourGraph.locations)
        
         
         if method == 'DFS':
