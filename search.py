@@ -344,6 +344,8 @@ def main():
                     
             
               print(f"{filename} {method}")
+              
+              #the len() function returns the number of nodes within the nodes_expanded list
               print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
               print(" -> ".join(map(str,result)))
 
