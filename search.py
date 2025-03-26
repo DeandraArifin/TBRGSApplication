@@ -264,25 +264,12 @@ def breadth_first_graph_search(problem):
     return None
 
 #pass in origin and destination instead of hardcoding it
-def runOurGraphDFS(ourGraph, origin, destination):
-    # Let's start with our path search problem
-    prob = GraphProblem(origin, destination, ourGraph)
-    # result = depth_first_tree_search(prob)
-    result = depth_first_graph_search(prob)
-    print(result)
-    path =[]
-    pNode = result
-    while pNode.parent:
-        path.insert(0, pNode.action)
-        pNode = pNode.parent
-
-    print("Our Path Finding Problem: The path from init to goal according to DFS is: ", path)
     
-def runOurGraphBFS(ourGraph, origin, destination):
+def runOurGraph(ourGraph, origin, destination, search_algo):
     # Let's start with our path search problem
     prob = GraphProblem(origin, destination, ourGraph)
     # result = depth_first_tree_search(prob)
-    result = breadth_first_graph_search(prob)
+    result = search_algo(prob)
     print(result)
     path =[]
     pNode = result
@@ -290,7 +277,7 @@ def runOurGraphBFS(ourGraph, origin, destination):
         path.insert(0, pNode.action)
         pNode = pNode.parent
 
-    print("Our Path Finding Problem: The path from init to goal according to BFS is: ", path)
+    print("Our Path Finding Problem: The path from init to goal according to #{search_algo}} is: ", path)
     
 def main():
         
@@ -319,10 +306,10 @@ def main():
         ourGraph.locations = loadproblem.nodes
         print(ourGraph.locations)
         
-        resultFirstRun = runOurGraphDFS(ourGraph, origin, destination)
+        resultFirstRun = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
         print(resultFirstRun)
         
-        resultSecondRun = runOurGraphBFS(ourGraph, origin, destination)
+        resultSecondRun = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
         print(resultSecondRun)
         result = None # Neutral placeholder for result variable to prevent weird errors.
       #   runOurGraph(ourGraph)
