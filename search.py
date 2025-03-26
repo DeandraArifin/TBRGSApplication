@@ -199,12 +199,6 @@ class GraphProblem(Problem):
         return m
 
 
-def dfs(origin, destination):
-    # DFS logic to be implemented here, currently just returns nothing
-    return None, 0, []
-
-    # Rest of search logic to be implemented also.
-
 #reformats the edges and weights so you can see the children nodes and their path costs per node
 def convert_to_adjacency_list(edges):
       adjacency_list = {}
@@ -277,7 +271,8 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
         path.insert(0, pNode.action)
         pNode = pNode.parent
 
-    print("Our Path Finding Problem: The path from init to goal according to #{search_algo}} is: ", path)
+    print(f"Our Path Finding Problem: The path from init to goal according to {search_algo} is: ", path)
+    return path
     
 def main():
         
@@ -306,29 +301,29 @@ def main():
         ourGraph.locations = loadproblem.nodes
         print(ourGraph.locations)
         
-        resultFirstRun = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
-        print(resultFirstRun)
+      #   resultFirstRun = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
+      #   print(resultFirstRun)
         
-        resultSecondRun = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
-        print(resultSecondRun)
-        result = None # Neutral placeholder for result variable to prevent weird errors.
+      #   resultSecondRun = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
+      #   print(resultSecondRun)
+      #   result = None # Neutral placeholder for result variable to prevent weird errors.
       #   runOurGraph(ourGraph)
        
         
         if method == 'DFS':
-              result = dfs(origin, destination)
+              result = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
         elif method == 'BFS':
-              # etc, etc
-              pass
+              result = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
         else:
               print(f"Method {method} not implemented.")
+              result = None
               sys.exit(1)
 
-        if result:
-              goal, nodes_expanded, path = result
+        if result != None:
+            #   goal, nodes_expanded, path = result
               print(f"{filename} {method}")
-              print(f"{goal} {nodes_expanded}")
-              print(" ->".join(map(str,path)))
+            #   print(f"{goal} {nodes_expanded}")
+              print(" -> ".join(map(str,result)))
 
               # Should also be correct format as specified in doc
 
