@@ -188,6 +188,17 @@ class GraphProblem(Problem):
             m = min(m, local_min)
 
         return m
+    
+    def h(self, node):
+        """h function is straight-line distance from a node's state to goal."""
+        locs = getattr(self.graph, 'locations', None)
+        if locs:
+            if type(node) is str:
+                return int(distance(locs[node], locs[self.goal]))
+
+            return int(distance(locs[node.state], locs[self.goal]))
+        else:
+            return np.inf
 
 
 #reformats the edges and weights so you can see the children nodes and their path costs per node
