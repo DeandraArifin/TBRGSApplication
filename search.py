@@ -373,6 +373,8 @@ def main():
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
         elif method == 'Astar':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, astar_search)
+        elif method == 'GBFS':
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, greedy_best_first_graph_search)
         else:
               print(f"Method {method} not implemented.")
               result = None
