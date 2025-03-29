@@ -1,4 +1,4 @@
-from pickle import FALSE
+from pickle import FALSE, TRUE
 import sys
 
 from collections import deque
@@ -278,7 +278,7 @@ def breadth_first_graph_search(problem):
                 frontier.append(child)
     return None
 
-def best_first_graph_search(problem, f, display=False):
+def best_first_graph_search(problem, f, display=TRUE):
     """Search the nodes with the lowest f scores first.
     You specify the function f(node) that you want to minimize; for example,
     if f is a heuristic estimate to the goal, then we have greedy best
@@ -296,7 +296,7 @@ def best_first_graph_search(problem, f, display=False):
         goal, goal_state = problem.goal_test(node.state)
         if goal:
             if display:
-                print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier")
+                print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier, the paths explored are: ", (explored), "what's left in the frontier is: ", [item for priority, item in frontier.heap])
             return node, explored, goal_state
         explored.add(node.state)
         for child in node.expand(problem):
@@ -337,9 +337,15 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     
     path =[]
     pNode = result
+    
+    #adds in the actions taken FROM initial state to goal state (excludes initial state in path)
     while pNode.parent:
+        print(f"Node: {pNode.state}, Parent: {pNode.parent.state if pNode.parent else None}")
         path.insert(0, pNode.action)
         pNode = pNode.parent
+    
+    #adds initial state to path
+    path.insert(0, pNode.state)
 
     print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
     return path, explored, goal_state
@@ -401,7 +407,10 @@ def main():
               
               #the len() function returns the number of nodes within the nodes_expanded list
               print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
+              print(f"{nodes_expanded}")
               print(" -> ".join(map(str,result)))
+              print("Raw path result:", result)
+
 
               # Should also be correct format as specified in doc
 
