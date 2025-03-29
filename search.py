@@ -194,9 +194,19 @@ class GraphProblem(Problem):
         locs = getattr(self.graph, 'locations', None)
         if locs:
             if type(node) is str:
+                
+                #modified to iterate through a list of goals if there's more than one goal
+                if isinstance(self.goal, list):
+                    return int(min(distance(locs[node], locs[g]) for g in self.goal))
+                
                 return int(distance(locs[node], locs[self.goal]))
 
+            #again checks if goal is a list
+            if isinstance(self.goal, list):
+                return int(min(distance(locs[node.state], locs[g]) for g in self.goal))
+            
             return int(distance(locs[node.state], locs[self.goal]))
+            
         else:
             return np.inf
 
@@ -282,10 +292,11 @@ def best_first_graph_search(problem, f, display=False):
     explored = set()
     while frontier:
         node = frontier.pop()
-        if problem.goal_test(node.state):
+        goal, goal_state = problem.goal_test(node.state)
+        if goal:
             if display:
                 print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier")
-            return node
+            return node, explored, goal_state
         explored.add(node.state)
         for child in node.expand(problem):
             if child.state not in explored and child not in frontier:
@@ -301,6 +312,15 @@ def best_first_graph_search(problem, f, display=False):
 
 
 greedy_best_first_graph_search = best_first_graph_search
+
+def astar_search(problem, h=None, display=False):
+    """A* search is best-first graph search with f(n) = g(n)+h(n).
+    You need to specify the h function when you call astar_search, or
+    else in your Problem subclass."""
+    h = memoize(h or problem.h, 'h')
+    return best_first_graph_search(problem, lambda n: n.path_cost + h(n), display)
+
+
 #pass in origin and destination instead of hardcoding it
     
 def runOurGraph(ourGraph, origin, destination, search_algo):
@@ -351,6 +371,8 @@ def main():
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
         elif method == 'BFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
+        elif method == 'Astar':
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, astar_search)
         else:
               print(f"Method {method} not implemented.")
               result = None
