@@ -1,3 +1,4 @@
+from pickle import FALSE
 import sys
 
 from collections import deque
@@ -324,10 +325,16 @@ def astar_search(problem, h=None, display=False):
 #pass in origin and destination instead of hardcoding it
     
 def runOurGraph(ourGraph, origin, destination, search_algo):
+
     # Let's start with our path search problem
     prob = GraphProblem(origin, destination, ourGraph)
-    result, explored, goal_state = search_algo(prob)
-
+    
+    #if else statement because the heuristic function in gbfs needs to be passed in
+    if search_algo is greedy_best_first_graph_search:
+        result, explored, goal_state = search_algo(prob, lambda n: prob.h(n), display=FALSE)
+    else:
+        result, explored, goal_state = search_algo(prob)
+    
     path =[]
     pNode = result
     while pNode.parent:
