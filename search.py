@@ -43,7 +43,7 @@ class Problem:
         if isinstance(self.goal, list):
             return is_in(state, self.goal), state
         else:
-            return state == self.goal
+            return state == self.goal, state
 
     def path_cost(self, c, state1, action, state2):
         """Return the cost of a solution path that arrives at state2 from
@@ -327,7 +327,7 @@ def astar_search(problem, h=None, display=False):
 def runOurGraph(ourGraph, origin, destination, search_algo):
 
     # Let's start with our path search problem
-    prob = GraphProblem(origin, destination, ourGraph)
+    prob = GraphProblem(3, 4, ourGraph)
     
     #if else statement because the heuristic function in gbfs needs to be passed in
     if search_algo is greedy_best_first_graph_search:
