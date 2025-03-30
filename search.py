@@ -340,12 +340,13 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     
     #adds in the actions taken FROM initial state to goal state (excludes initial state in path)
     while pNode.parent:
-        print(f"Node: {pNode.state}, Parent: {pNode.parent.state if pNode.parent else None}")
+        # print(f"Node: {pNode.state}, Parent: {pNode.parent.state if pNode.parent else None}")
         path.insert(0, pNode.action)
         pNode = pNode.parent
     
+    #alternative to adding origin in main
     #adds initial state to path
-    path.insert(0, pNode.state)
+    # path.insert(0, pNode.state)
 
     print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
     return path, explored, goal_state
@@ -407,9 +408,8 @@ def main():
               
               #the len() function returns the number of nodes within the nodes_expanded list
               print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
-              print(f"{nodes_expanded}")
-              print(" -> ".join(map(str,result)))
-              print("Raw path result:", result)
+            #   print(f"{nodes_expanded}")
+              print(origin, "->", " -> ".join(map(str,result)))
 
 
               # Should also be correct format as specified in doc
