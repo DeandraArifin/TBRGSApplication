@@ -327,7 +327,7 @@ def astar_search(problem, h=None, display=False):
 def runOurGraph(ourGraph, origin, destination, search_algo):
 
     # Let's start with our path search problem
-    prob = GraphProblem(3, 4, ourGraph)
+    prob = GraphProblem(origin, destination, ourGraph)
     
     #if else statement because the heuristic function in gbfs needs to be passed in
     if search_algo is greedy_best_first_graph_search:
