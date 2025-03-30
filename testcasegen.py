@@ -58,6 +58,10 @@ def main():
     randedges(G)
     randedges(G) #deepen connections
 
+    try:
+        G.remove_edge(1,1)
+    except: 
+        print("No (1,1) edge")
     dest = rnd.randint(1, len(G.nodes))
     origin = rnd.choice([i for i in range(1, len(G.nodes)) if i != dest])
 
