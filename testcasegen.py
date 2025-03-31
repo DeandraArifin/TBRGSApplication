@@ -41,7 +41,6 @@ def write(G, pos, dest, origin):
     directory = './GeneratedPaths/'
     i = 0
     os.chdir(directory)
-    print(os.getcwd())
     while os.path.exists(f"GenPathFinder{i}.txt"):
         i += 1
     f = open(f"GenPathFinder{i}.txt", "x")
