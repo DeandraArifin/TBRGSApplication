@@ -38,9 +38,13 @@ def assign_pos(G):
     return pos
 
 def write(G, pos, dest, origin):
-    if os.path.exists("GenPathFinder.txt"):
-        os.remove("GenPathFinder.txt")
-    f = open("GenPathFinder.txt", "x")
+    directory = './GeneratedPaths/'
+    i = 0
+    os.chdir(directory)
+    print(os.getcwd())
+    while os.path.exists(f"GenPathFinder{i}.txt"):
+        i += 1
+    f = open(f"GenPathFinder{i}.txt", "x")
     f.write("Nodes:\n")
     for node, (x, y) in pos.items():
         f.write(f"{node}: ({x}, {y})\n")
