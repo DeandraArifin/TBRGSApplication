@@ -368,6 +368,7 @@ def main():
         else:
             print(filename)
         method = sys.argv[2]
+        # breakpoint()
 
         # So the use of this is as specified in the assignment doc, (python search.py <filename> <method>)
         # search.py PathFinder-test.txt DFS (will currently just return nothing, but useful to see the test results for loading in)
@@ -376,7 +377,7 @@ def main():
         import loadproblem
         origin, destination = loadproblem.loadproblem(filename)
         print(f"Origin: {origin}\nDestination:{destination}")
-
+        breakpoint()
         if "GenPathFinder" not in filename:
             os.chdir("..")
 
