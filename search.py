@@ -162,7 +162,11 @@ class Graph:
         s2 = set([k2 for v in self.graph_dict.values() for k2, v2 in v.items()])
         nodes = s1.union(s2)
         return list(nodes)
-  
+
+def UndirectedGraph(graph_dict=None):
+    """Build a Graph where every edge (including future ones) goes both ways."""
+    return Graph(graph_dict=graph_dict, directed=False)
+
 #create the class for the graph problem, initial and goal states will later be initialized when we define the running function to run in main
 class GraphProblem(Problem):
     """The problem of searching a graph from one node to another."""
@@ -405,6 +409,7 @@ def main():
         #reformats edges and nodes into a graph constructed like the romania map
         #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
+        ourUndirectedGraph = UndirectedGraph(adjacency_list)
         # print(ourGraph)
         # breakpoint()
         
@@ -413,7 +418,8 @@ def main():
        
         
         if method == 'DFS':
-              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
+            #   result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
+            result, explored, goal_state = runOurGraph(ourUndirectedGraph, origin, destination, depth_first_graph_search)
         elif method == 'BFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
         elif method == 'Astar':
