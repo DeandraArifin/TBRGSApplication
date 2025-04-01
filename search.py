@@ -322,6 +322,9 @@ def astar_search(problem, h=None, display=False):
     return best_first_graph_search(problem, lambda n: n.path_cost + h(n), display)
 
 
+def uniform_cost_search(problem, display=False): # Pre sure UCS is just astar where h = 0 so this should be correct
+    return best_first_graph_search(problem, lambda n: n.path_cost, display)
+
 #pass in origin and destination instead of hardcoding it
     
 def runOurGraph(ourGraph, origin, destination, search_algo):
@@ -389,6 +392,8 @@ def main():
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, astar_search)
         elif method == 'GBFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, greedy_best_first_graph_search)
+        elif method == 'UCS':
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, uniform_cost_search)
         else:
               print(f"Method {method} not implemented.")
               result = None
