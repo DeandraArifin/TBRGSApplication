@@ -238,6 +238,8 @@ def depth_first_graph_search(problem):
     If two paths reach a state, only use the first one.
     """
     frontier = [(Node(problem.initial))]  # Stack
+    print(frontier)
+    # breakpoint()
 
     explored = set()
     while frontier:
@@ -246,11 +248,13 @@ def depth_first_graph_search(problem):
         goal, goal_state = problem.goal_test(node.state)
         #   only checks the returned boolean value
         if goal:
+            print(node, explored, goal_state)
+            breakpoint()
             return node, explored, goal_state
         explored.add(node.state)
         frontier.extend(child for child in node.expand(problem)
                         if child.state not in explored and child not in frontier)
-    return None
+    return None, explored, None
 
 def breadth_first_graph_search(problem):
     """[Figure 3.11]
@@ -276,7 +280,7 @@ def breadth_first_graph_search(problem):
                 if goal_child:
                     return child, explored, goal_state_child
                 frontier.append(child)
-    return None
+    return None, explored, None
 
 def best_first_graph_search(problem, f, display=TRUE):
     """Search the nodes with the lowest f scores first.
@@ -306,7 +310,7 @@ def best_first_graph_search(problem, f, display=TRUE):
                 if f(child) < frontier[child]:
                     del frontier[child]
                     frontier.append(child)
-    return None
+    return None, explored, None
 
 # ______________________________________________________________________________
 # Informed (Heuristic) Search
@@ -377,7 +381,6 @@ def main():
         import loadproblem
         origin, destination = loadproblem.loadproblem(filename)
         print(f"Origin: {origin}\nDestination:{destination}")
-        breakpoint()
         if "GenPathFinder" not in filename:
             os.chdir("..")
 
@@ -387,13 +390,16 @@ def main():
         # print("Edges:", loadproblem.edges)
         # print("Origin:", origin)
         # print("Destination:", destination)
-        
+        # breakpoint()
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
+        print(adjacency_list)
         
         #reformats edges and nodes into a graph constructed like the romania map
         #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
+        # print(ourGraph)
+        # breakpoint()
         
         #locations holds the coordinates of the nodes
         ourGraph.locations = loadproblem.nodes
