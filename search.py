@@ -355,8 +355,18 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     return path, explored, goal_state
     
 def main():
+        #Trying to implement test case generation into here, which will also help with visualisation.
+        
         
         filename = sys.argv[1]
+        if filename.lower() == 'generate':
+            import testcasegen
+            i = testcasegen.main()
+            os.chdir("./GeneratedPaths")
+            filename = f"GenPathFinder{i}.txt"
+            print(filename)
+        else:
+            print(filename)
         method = sys.argv[2]
 
         # So the use of this is as specified in the assignment doc, (python search.py <filename> <method>)
@@ -365,13 +375,17 @@ def main():
 
         import loadproblem
         origin, destination = loadproblem.loadproblem(filename)
+        print(f"Origin: {origin}\nDestination:{destination}")
+
+        if "GenPathFinder" not in filename:
+            os.chdir("..")
 
 
         # The following is the test lines from loadproblem.py, just to make sure it all worked fine with the changes
-      #   print("Nodes:", loadproblem.nodes)
-      #   print("Edges:", loadproblem.edges)
-      #   print("Origin:", origin)
-      #   print("Destination:", destination)
+        # print("Nodes:", loadproblem.nodes)
+        # print("Edges:", loadproblem.edges)
+        # print("Origin:", origin)
+        # print("Destination:", destination)
         
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)

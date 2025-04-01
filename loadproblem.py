@@ -41,7 +41,7 @@ def loadproblem(filename): # Changed this so it will accept filename passed from
                 origin = int(line)
                 
             elif current_section == 'Destinations':
-                destinations = list(map(int, line.split(';'))) #split at the semicolon 
+                destinations = list(map(int, line.split(';'))) #split at the semicolon
     return origin, destinations #have to return these because they're local unlike node + edges 
 
 # Commenting the test lines out - now in search.py
