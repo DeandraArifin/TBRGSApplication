@@ -345,10 +345,12 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     else:
         result, explored, goal_state = search_algo(prob)
     
+    if result == None:
+        return None, explored, None
     path =[]
     pNode = result
-    print("result", result)
-    breakpoint()
+    # print("result", result)
+    # breakpoint()
     
     #adds in the actions taken FROM initial state to goal state (excludes initial state in path)
     while pNode.parent:
