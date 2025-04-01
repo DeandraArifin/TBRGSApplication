@@ -82,6 +82,7 @@ class Node:
 
     def expand(self, problem):
         """List the nodes reachable in one step from this node."""
+
         return [self.child_node(problem, action)
                 for action in problem.actions(self.state)]
 
@@ -248,12 +249,14 @@ def depth_first_graph_search(problem):
         goal, goal_state = problem.goal_test(node.state)
         #   only checks the returned boolean value
         if goal:
-            print(node, explored, goal_state)
-            breakpoint()
+            # print(node, explored, goal_state)
+            # breakpoint()
             return node, explored, goal_state
         explored.add(node.state)
         frontier.extend(child for child in node.expand(problem)
                         if child.state not in explored and child not in frontier)
+        
+        #current problem is that the frontier isn't being extended
     return None, explored, None
 
 def breadth_first_graph_search(problem):
@@ -344,6 +347,8 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     
     path =[]
     pNode = result
+    print("result", result)
+    breakpoint()
     
     #adds in the actions taken FROM initial state to goal state (excludes initial state in path)
     while pNode.parent:
@@ -393,7 +398,7 @@ def main():
         # breakpoint()
         #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
-        print(adjacency_list)
+        print("adjacency list = ", adjacency_list)
         
         #reformats edges and nodes into a graph constructed like the romania map
         #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
