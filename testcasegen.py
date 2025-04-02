@@ -79,6 +79,6 @@ def main():
     draw(G, pos)  
     return index
 
-main() #uncomment if you want to run this seperately to search.py
+#main() #uncomment if you want to run this seperately to search.py
 
 
