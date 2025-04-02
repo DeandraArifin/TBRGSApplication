@@ -70,14 +70,8 @@ def main():
     origin = rnd.choice([i for i in range(1, len(G.nodes)) if i != dest])
 
     for edge in G.edges:
-        if edge == (1,1):
-            G.remove_edge(edge)
-    for component in nx.connected_components(G):
-        print(f"Component {component}")
-        print(list(filter(lambda x: x[0] in component and x[1] in component, G.edges)))
-        a = (list(filter(lambda x: x[0] in component and x[1] in component, G.edges)))
-        for edge in a:
-            if edge[0] == edge[1]:
+        if edge[0] == edge[1]:
+                print(f"{edge} deleted")
                 G.remove_edge(edge)
 
     pos = assign_pos(G)
@@ -85,6 +79,6 @@ def main():
     draw(G, pos)  
     return index
 
-#main() #uncomment if you want to run this seperately to search.py
+main() #uncomment if you want to run this seperately to search.py
 
 
