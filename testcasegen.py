@@ -72,6 +72,13 @@ def main():
     for edge in G.edges:
         if edge == (1,1):
             G.remove_edge(edge)
+    for component in nx.connected_components(G):
+        print(f"Component {component}")
+        print(list(filter(lambda x: x[0] in component and x[1] in component, G.edges)))
+        a = (list(filter(lambda x: x[0] in component and x[1] in component, G.edges)))
+        for edge in a:
+            if edge[0] == edge[1]:
+                G.remove_edge(edge)
 
     pos = assign_pos(G)
     index = write(G, pos, dest, origin)
