@@ -1,14 +1,9 @@
-from pickle import FALSE, TRUE
 import sys
-
 from collections import deque
 from matplotlib.font_manager import weight_dict
 from nbformat import convert
 from loadproblem import nodes, edges
 from utils import *
-
-#might need this as a global variable to build something like the romania map
-route = {}
 
 class Problem:
     """The abstract class for a formal problem."""
@@ -81,10 +76,12 @@ class Node:
         return self.state < node.state
 
     def expand(self, problem):
-        """List the nodes reachable in one step from this node."""
-
-        return [self.child_node(problem, action)
-                for action in problem.actions(self.state)]
+        # Now expands smaller node ID's first
+        return sorted(
+            [self.child_node(problem, action)
+            for action in problem.actions(self.state)],
+            key=lambda node: node.state
+        )
 
     def child_node(self, problem, action):
         """[Figure 3.10]"""
@@ -121,7 +118,6 @@ class Node:
   
   
 class Graph:
-
 
     def __init__(self, graph_dict=None, directed=True):
         self.graph_dict = graph_dict or {}
@@ -163,9 +159,10 @@ class Graph:
         nodes = s1.union(s2)
         return list(nodes)
 
-# def UndirectedGraph(graph_dict=None):
-#     """Build a Graph where every edge (including future ones) goes both ways."""
-#     return Graph(graph_dict=graph_dict, directed=False)
+def UndirectedGraph(graph_dict=None):
+    # Build a Graph where every edge (including future ones) goes both ways.
+    # We should never need to use this though.. the graphs are directed.
+    return Graph(graph_dict=graph_dict, directed=False)
 
 #create the class for the graph problem, initial and goal states will later be initialized when we define the running function to run in main
 class GraphProblem(Problem):
@@ -228,10 +225,6 @@ def convert_to_adjacency_list(edges):
             
             adjacency_list[source_node][dest_node] = weight
       return adjacency_list
-
-# adjacency_list = convert_to_adjacency_list(edges)
-# ourGraph = Graph(adjacency_list)
-# ourGraph.locations(nodes)
       
 def depth_first_graph_search(problem):
     """
@@ -244,7 +237,6 @@ def depth_first_graph_search(problem):
     """
     frontier = [(Node(problem.initial))]  # Stack
     print(frontier)
-    # breakpoint()
 
     explored = set()
     while frontier:
@@ -253,14 +245,11 @@ def depth_first_graph_search(problem):
         goal, goal_state = problem.goal_test(node.state)
         #   only checks the returned boolean value
         if goal:
-            # print(node, explored, goal_state)
-            # breakpoint()
             return node, explored, goal_state
         explored.add(node.state)
         frontier.extend(child for child in node.expand(problem)
                         if child.state not in explored and child not in frontier)
         
-        #current problem is that the frontier isn't being extended
     return None, explored, None
 
 def breadth_first_graph_search(problem):
@@ -289,7 +278,7 @@ def breadth_first_graph_search(problem):
                 frontier.append(child)
     return None, explored, None
 
-def best_first_graph_search(problem, f, display=TRUE):
+def best_first_graph_search(problem, f, display=True):
     """Search the nodes with the lowest f scores first.
     You specify the function f(node) that you want to minimize; for example,
     if f is a heuristic estimate to the goal, then we have greedy best
@@ -319,59 +308,38 @@ def best_first_graph_search(problem, f, display=TRUE):
                     frontier.append(child)
     return None, explored, None
 
-# ______________________________________________________________________________
-# Informed (Heuristic) Search
-
-
-greedy_best_first_graph_search = best_first_graph_search
+def greedy_best_first_graph_search(problem, display=False):
+    return best_first_graph_search(problem, lambda n: problem.h(n), display)
 
 def astar_search(problem, h=None, display=False):
-    """A* search is best-first graph search with f(n) = g(n)+h(n).
-    You need to specify the h function when you call astar_search, or
-    else in your Problem subclass."""
     h = memoize(h or problem.h, 'h')
     return best_first_graph_search(problem, lambda n: n.path_cost + h(n), display)
 
-
 def uniform_cost_search(problem, display=False): # Pre sure UCS is just astar where h = 0 so this should be correct
     return best_first_graph_search(problem, lambda n: n.path_cost, display)
-
-#pass in origin and destination instead of hardcoding it
     
 def runOurGraph(ourGraph, origin, destination, search_algo):
 
-    # Let's start with our path search problem
-    prob = GraphProblem(origin, destination, ourGraph)
-    
-    #if else statement because the heuristic function in gbfs needs to be passed in
-    if search_algo is greedy_best_first_graph_search:
-        result, explored, goal_state = search_algo(prob, lambda n: prob.h(n), display=FALSE)
-    else:
-        result, explored, goal_state = search_algo(prob)
+    problem = GraphProblem(origin, destination, ourGraph)
+    result, explored, goal_state = search_algo(problem)
     
     if result == None:
         return None, explored, None
     path =[]
     pNode = result
-    # print("result", result)
-    # breakpoint()
     
     #adds in the actions taken FROM initial state to goal state (excludes initial state in path)
     while pNode.parent:
         # print(f"Node: {pNode.state}, Parent: {pNode.parent.state if pNode.parent else None}")
         path.insert(0, pNode.action)
         pNode = pNode.parent
-    
-    #alternative to adding origin in main
-    #adds initial state to path
-    # path.insert(0, pNode.state)
 
-    print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
+    # Uncomment the following line if you want for debugging, should not be printing in final submission
+    # print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
     return path, explored, goal_state
     
 def main():
         #Trying to implement test case generation into here, which will also help with visualisation.
-        
         
         filename = sys.argv[1]
         if filename.lower() == 'generate':
@@ -379,9 +347,12 @@ def main():
             i = testcasegen.main()
             os.chdir("./GeneratedPaths")
             filename = f"GenPathFinder{i}.txt"
-            print(filename)
+            # Uncomment the following line if you want for debugging, should not be printing in final submission
+            # print(filename)
         else:
-            print(filename)
+            # Uncomment the following line if you want for debugging, should not be printing in final submission
+            # print(filename)
+            pass
         method = sys.argv[2]
         # breakpoint()
 
@@ -391,42 +362,32 @@ def main():
 
         import loadproblem
         origin, destination = loadproblem.loadproblem(filename)
-        print(f"Origin: {origin}\nDestination:{destination}")
+        # Uncomment the following line if you want for debugging, should not be printing in final submission
+        # print(f"Origin: {origin}\nDestination:{destination}")
         if "GenPathFinder" not in filename:
             os.chdir("..")
 
-
-        # The following is the test lines from loadproblem.py, just to make sure it all worked fine with the changes
-        # print("Nodes:", loadproblem.nodes)
-        # print("Edges:", loadproblem.edges)
-        # print("Origin:", origin)
-        # print("Destination:", destination)
-        # breakpoint()
-        #calls the reformatting of the edges
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
-        print("adjacency list = ", adjacency_list)
+
+        # Uncomment the following if you want the adjacency list printed - not needed to be printed unless debugging
+        # print("adjacency list = ", adjacency_list)
         
         #reformats edges and nodes into a graph constructed like the romania map
         #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
-        #ourUndirectedGraph = UndirectedGraph(adjacency_list)
-        # print(ourGraph)
-        # breakpoint()
-        
         #locations holds the coordinates of the nodes
         ourGraph.locations = loadproblem.nodes
        
         
         if method == 'DFS':
-            #   result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
-            result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
         elif method == 'BFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
         elif method == 'Astar':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, astar_search)
         elif method == 'GBFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, greedy_best_first_graph_search)
-        elif method == 'UCS':
+        elif method in ['UCS', 'CUS1']:
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, uniform_cost_search)
         else:
               print(f"Method {method} not implemented.")

@@ -22,7 +22,7 @@ def loadproblem(filename): # Changed this so it will accept filename passed from
                 mydict[current_section] = []
 
             elif current_section == 'Nodes' and re.match(r'^\d+:', line): #r = raw string, \d+ = one or more digits
-                match = re.match(r'(\d+): \((\d+),(\d+)\)', line)
+                match = re.match(r'(\d+): \((-?\d+),(-?\d+)\)', line) # 4/04 Changed this so we can now handle nodes that are negative, eg at location (-1, 1). Not sure if this matters but tested and shouldn't break anything
                 if match:  
                     node_id = int(match.group(1))
                     node_x = int(match.group(2))
