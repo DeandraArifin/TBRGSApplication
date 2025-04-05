@@ -16,7 +16,7 @@ def randedges(G):
         unconnected = [n for n in G.nodes() if not n in connected]
 
         if len(unconnected):
-            if rnd.random() < 1:
+            if rnd.random() < 0.8:
                 edge = rnd.choice(unconnected)
                 if node != edge:
                     G.add_edge(node, edge, weight = rnd.randint(1,4))
@@ -49,10 +49,12 @@ def write(G, pos, dest, origin):
         f.write(f"{node}: ({x},{y})\n")
     f.write(f"Edges: \n")
     for edge in G.edges:
-        cut = str(edge)[:5]
+        print(edge)
+        # cut = str(edge)[:5]
+        cut = str(edge)
         cut = cut.strip()
         cut = cut.replace(" ", "") #this all just cleans up the formatting of saving edges
-        f.write(f"{cut}): {rnd.randint(1,4)}\n")
+        f.write(f"{cut}: {rnd.randint(1,4)}\n")
     f.write(f"Origin:\n{origin}\nDestinations:\n{dest}")
     os.chdir("..")
     return i
@@ -79,6 +81,6 @@ def main():
     draw(G, pos)  
     return index
 
-#main() #uncomment if you want to run this seperately to search.py
+main() #uncomment if you want to run this seperately to search.py
 
 
