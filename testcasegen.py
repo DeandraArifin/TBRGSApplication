@@ -50,7 +50,6 @@ def write(G, pos, dest, origin):
     f.write(f"Edges: \n")
     for edge in G.edges:
         print(edge)
-        # cut = str(edge)[:5]
         cut = str(edge)
         cut = cut.strip()
         cut = cut.replace(" ", "") #this all just cleans up the formatting of saving edges
@@ -81,6 +80,6 @@ def main():
     draw(G, pos)  
     return index
 
-main() #uncomment if you want to run this seperately to search.py
+# main() #uncomment if you want to run this seperately to search.py
 
 

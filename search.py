@@ -4,6 +4,7 @@ from matplotlib.font_manager import weight_dict
 from nbformat import convert
 from loadproblem import nodes, edges
 from utils import *
+import testcasegen
 
 class Problem:
     """The abstract class for a formal problem."""
@@ -340,10 +341,10 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     
 def main():
         #Trying to implement test case generation into here, which will also help with visualisation.
-        
+        generate = False
         filename = sys.argv[1]
         if filename.lower() == 'generate':
-            import testcasegen
+            generate = True
             i = testcasegen.main()
             os.chdir("./GeneratedPaths")
             filename = f"GenPathFinder{i}.txt"
@@ -352,6 +353,7 @@ def main():
         else:
             # Uncomment the following line if you want for debugging, should not be printing in final submission
             # print(filename)
+            generate = False
             pass
         method = sys.argv[2]
         # breakpoint()
@@ -361,7 +363,7 @@ def main():
         # Could maybe add some error handling to be more user friendly
 
         import loadproblem
-        origin, destination = loadproblem.loadproblem(filename)
+        origin, destination, edges, nodes = loadproblem.loadproblem(filename)
         # Uncomment the following line if you want for debugging, should not be printing in final submission
         # print(f"Origin: {origin}\nDestination:{destination}")
         if "GenPathFinder" not in filename:
@@ -375,8 +377,10 @@ def main():
         #reformats edges and nodes into a graph constructed like the romania map
         #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
+        if generate == False:
+            newg, pos = loadproblem.todraw(nodes, edges)
         #locations holds the coordinates of the nodes
-        ourGraph.locations = loadproblem.nodes
+        ourGraph.locations = loadproblem.nodes       
        
         
         if method == 'DFS':
@@ -410,6 +414,11 @@ def main():
               print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
             #   print(f"{nodes_expanded}")
               print(origin, "->", " -> ".join(map(str,result)))
+              if generate == False:
+                colour_map = ['green' if node in result or node == origin else 'red' for node in newg.nodes]
+                loadproblem.draw(newg, pos, colour_map)
+
+                
 
 
               # Should also be correct format as specified in doc

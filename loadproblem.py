@@ -1,5 +1,7 @@
 import sys
 import re
+import networkx as nx
+import matplotlib.pyplot as plt
 
 print('Number of arguments:', len(sys.argv), 'arguments.')
 print('Argument List:', str(sys.argv))
@@ -46,7 +48,26 @@ def loadproblem(filename): # Changed this so it will accept filename passed from
                 else:
                     destinations = int(line.strip())
                
-    return origin, destinations #have to return these because they're local unlike node + edges 
+    return origin, destinations, edges, nodes #have to return these because they're local unlike node + edges
+
+def todraw(nodes, edges):
+    newg = nx.Graph()
+    for node_id, (node_x, node_y) in nodes.items():
+        newg.add_node(node_id, pos=(node_x, node_y))
+    newg.add_edges_from(edges)
+    pos = nx.get_node_attributes(newg, 'pos')
+    colour_map = False
+    draw(newg, pos, colour_map)
+    return newg, pos
+
+def draw(newg, pos, colour_map):
+    plt.figure(1); plt.clf()
+    fig, ax = plt.subplots(2,1, num=1, sharex=True, sharey=True)
+    if colour_map == False:
+        nx.draw_networkx(newg, pos, ax=ax[0])
+    else:
+        nx.draw_networkx(newg, pos, node_color=colour_map, ax=ax[0])
+    plt.show()
 
 # Commenting the test lines out - now in search.py
 
