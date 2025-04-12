@@ -382,8 +382,8 @@ def main():
         #reformats edges and nodes into a graph constructed like the romania map
         #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
-        if generate == False:
-            newg, pos = loadproblem.todraw(nodes, edges, origin, destination)
+        #if generate == False:
+        newg, pos = loadproblem.todraw(nodes, edges, origin, destination)
         #locations holds the coordinates of the nodes
         ourGraph.locations = loadproblem.nodes       
        
@@ -421,12 +421,10 @@ def main():
               print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
             #   print(f"{nodes_expanded}")
               print(origin, "->", " -> ".join(map(str,result)))
-              if generate == False:
-                # colour_map = ['#91dea8' if node in result else '#2a8d48' if node == origin
-                #                else '#f86c62' for node in newg.nodes]
-                colour_map = ['#91dea8' if node in result else '#2a8d48' if node == origin
-                              else '#f86c62' if node in nodes_expanded else '#D295BF' for node in newg.nodes]
-                loadproblem.draw(newg, pos, colour_map, origin, destination)
+              #if generate == False:
+              colour_map = ['#91dea8' if node in result else '#2a8d48' if node == origin
+                             else '#f86c62' if node in nodes_expanded else '#D295BF' for node in newg.nodes]
+              loadproblem.draw(newg, pos, colour_map, origin, destination)
 
                 
 

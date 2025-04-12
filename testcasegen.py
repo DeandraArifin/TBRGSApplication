@@ -49,11 +49,10 @@ def write(G, pos, dest, origin):
         f.write(f"{node}: ({x},{y})\n")
     f.write(f"Edges: \n")
     for edge in G.edges:
-        print(edge)
         cut = str(edge)
         cut = cut.strip()
         cut = cut.replace(" ", "") #this all just cleans up the formatting of saving edges
-        f.write(f"{cut}: {rnd.randint(1,4)}\n")
+        f.write(f"{cut}: {rnd.randint(1,10)}\n")
     f.write(f"Origin:\n{origin}\nDestinations:\n{dest}")
     os.chdir("..")
     return i
@@ -76,8 +75,7 @@ def main():
                 G.remove_edge(edge)
 
     pos = assign_pos(G)
-    index = write(G, pos, dest, origin)
-    draw(G, pos)  
+    index = write(G, pos, dest, origin) 
     return index
 
 # main() #uncomment if you want to run this seperately to search.py

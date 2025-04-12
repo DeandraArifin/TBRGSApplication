@@ -64,20 +64,23 @@ def todraw(nodes, edges, origin, destinations):
 def draw(newg, pos, colour_map, origin, destinations):
     #nodes+edges
     if colour_map == False:
-        nx.draw_networkx_nodes(newg, pos, node_size=600, node_color="#D295BF")
+        nx.draw_networkx_nodes(newg, pos, node_size=500, node_color="#D295BF")
     else:
-        nx.draw_networkx_nodes(newg, pos, node_size=600, node_color=colour_map)
+        nx.draw_networkx_nodes(newg, pos, node_size=500, node_color=colour_map)
     
     nx.draw_networkx_edges(
         newg, pos, width=4, alpha=1, edge_color="#77507c",
         style="solid", arrowstyle="->", arrowsize=25)
     #labels
+    if type(destinations)==int:
+        dest = destinations
+        destinations = []
+        destinations.append(dest)
     labels = {}
-    print(destinations)
     for node in newg.nodes:
         if node == origin:
             labels[node] = f"\n{node}\nOrigin"
-        elif node in destinations:
+        elif node in destinations :
             labels[node] = f"\n{node}\nDest."
         else:
             labels[node] = str(node)
