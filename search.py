@@ -316,12 +316,17 @@ def astar_search(problem, h=None, display=False):
     h = memoize(h or problem.h, 'h')
     return best_first_graph_search(problem, lambda n: n.path_cost + h(n), display)
 
-def uniform_cost_search(problem, display=False): # Pre sure UCS is just astar where h = 0 so this should be correct
+def cus1_search(problem, display=False): # Custom algorithm 1, it is UCS//Uninformed astar.
     return best_first_graph_search(problem, lambda n: n.path_cost, display)
+
+def cus2_search(problem, display=False): # Pretty much making Astar but where each path cost is 1, so using n.depth instead of n.path_cost to count the steps taken not total path cost
+    h = memoize(problem.h, 'h')
+    return best_first_graph_search(problem, lambda n: n.depth + h(n), display)
+
     
 def runOurGraph(ourGraph, origin, destination, search_algo):
-
     problem = GraphProblem(origin, destination, ourGraph)
+    
     result, explored, goal_state = search_algo(problem)
     
     if result == None:
@@ -391,8 +396,10 @@ def main():
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, astar_search)
         elif method == 'GBFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, greedy_best_first_graph_search)
-        elif method in ['UCS', 'CUS1']:
-              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, uniform_cost_search)
+        elif method == 'CUS1':
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, cus1_search)
+        elif method == 'CUS2':
+              result, explored, goal_state = runOurGraph(ourGraph, origin, destination, cus2_search)
         else:
               print(f"Method {method} not implemented.")
               result = None
