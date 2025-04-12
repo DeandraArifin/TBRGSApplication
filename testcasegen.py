@@ -59,7 +59,7 @@ def write(G, pos, dest, origin):
     return i
 
 def main():
-    G = nx.Graph()
+    G = nx.DiGraph()
     li = randnodes()
     G.add_nodes_from(li)
 

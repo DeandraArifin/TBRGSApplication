@@ -50,29 +50,44 @@ def loadproblem(filename): # Changed this so it will accept filename passed from
                
     return origin, destinations, edges, nodes #have to return these because they're local unlike node + edges
 
-def todraw(nodes, edges):
-    newg = nx.Graph()
+def todraw(nodes, edges, origin, destinations):
+    newg = nx.DiGraph()
     for node_id, (node_x, node_y) in nodes.items():
         newg.add_node(node_id, pos=(node_x, node_y))
-    newg.add_edges_from(edges)
+    for edge, weight in edges.items():
+        newg.add_edge(*edge, weight=weight) #* to unpack source and dest
     pos = nx.get_node_attributes(newg, 'pos')
     colour_map = False
-    draw(newg, pos, colour_map)
+    draw(newg, pos, colour_map, origin, destinations)
     return newg, pos
 
-def draw(newg, pos, colour_map):
-    plt.figure(1); plt.clf()
-    fig, ax = plt.subplots(2,1, num=1, sharex=True, sharey=True)
+def draw(newg, pos, colour_map, origin, destinations):
+    #nodes+edges
     if colour_map == False:
-        nx.draw_networkx(newg, pos, ax=ax[0])
+        nx.draw_networkx_nodes(newg, pos, node_size=600, node_color="#D295BF")
     else:
-        nx.draw_networkx(newg, pos, node_color=colour_map, ax=ax[0])
+        nx.draw_networkx_nodes(newg, pos, node_size=600, node_color=colour_map)
+    
+    nx.draw_networkx_edges(
+        newg, pos, width=4, alpha=1, edge_color="#77507c",
+        style="solid", arrowstyle="->", arrowsize=25)
+    #labels
+    labels = {}
+    print(destinations)
+    for node in newg.nodes:
+        if node == origin:
+            labels[node] = f"\n{node}\nOrigin"
+        elif node in destinations:
+            labels[node] = f"\n{node}\nDest."
+        else:
+            labels[node] = str(node)
+
+    nx.draw_networkx_labels(newg, pos, font_size=15, font_family="sans-serif", labels=labels)
+    edge_labels = nx.get_edge_attributes(newg, "weight")
+    nx.draw_networkx_edge_labels(newg, pos, edge_labels)
+
+    ax = plt.gca()
+    ax.margins(0.08)
+    plt.axis("off")
+    plt.tight_layout()
     plt.show()
-
-# Commenting the test lines out - now in search.py
-
-# (origin, destinations) = loadproblem()
-# print("Nodes: ", nodes)
-# print("Edges: ", edges)
-# print("Origin: ", origin)
-# print("Destination: ", destinations)
