@@ -307,9 +307,45 @@ def astar_search(problem, h=None, display=False):
 def cus1_search(problem, display=False): # Custom algorithm 1, it is UCS//Uninformed astar.
     return best_first_graph_search(problem, lambda n: n.path_cost, display)
 
-def cus2_search(problem, display=False): # Pretty much making Astar but where each path cost is 1, so using n.depth instead of n.path_cost to count the steps taken not total path cost
-    h = memoize(problem.h, 'h')
-    return best_first_graph_search(problem, lambda n: n.depth + h(n), display)
+def cus2_search(problem, display=False): 
+    """Cus 2 now using a heuristic that determines the avg amount of steps
+    it should take to traverse from the origin to the node goal and uses its estimation
+    of how far the goal is in straight-line distance and how long a typical move is
+    to find the shortest path in number of moves, with the depth as the path cost.
+    
+    So checks all nodes it can readch
+    checks the depth of the nodes
+    checks how close it is to goal (estimated steps remaining)
+    picks the node that seems like it will get to goal in fewest total moves
+    repeat
+
+    """
+
+    from math import sqrt
+    from loadproblem import nodes, edges
+
+    # Estimate average edge length
+    total_distance = 0
+    count = 0
+    for (a, b) in edges:
+        ax, ay = nodes[a]
+        bx, by = nodes[b]
+        dist = sqrt((ax - bx)**2 + (ay - by)**2)
+        total_distance += dist
+        count += 1
+    average_edge_length = total_distance / count if count > 0 else 1  # avoid div by 0 breaking program
+
+    # Determine goal
+    goal = problem.goal[0] if isinstance(problem.goal, list) else problem.goal
+
+    # Heuristic that estimates number of steps (instead of straight line distance so it doesn't fall into GBFS trap of just getting close quickly)
+    def step_based_heuristic(n):
+        x1, y1 = nodes[n.state]
+        x2, y2 = nodes[goal]
+        straight_line_distance = sqrt((x1 - x2)**2 + (y1 - y2)**2)
+        return straight_line_distance / average_edge_length
+
+    return best_first_graph_search(problem, lambda n: n.depth + step_based_heuristic(n), display)
 
     
 def runOurGraph(ourGraph, origin, destination, search_algo):
