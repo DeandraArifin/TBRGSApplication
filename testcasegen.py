@@ -24,13 +24,6 @@ def randedges(G):
                 unconnected.remove(edge)
                 connected.append(edge)
 
-def draw(G, pos):
-    plt.figure(1); plt.clf()
-    fig, ax = plt.subplots(2,1, num=1, sharex=True, sharey=True)
-    pos = nx.spring_layout(G)
-    nx.draw_networkx(G, pos=pos, ax=ax[0])
-    plt.show()
-
 def assign_pos(G):
     maxnode = max(G.nodes())
     pos = {node: (rnd.randint(1, maxnode), rnd.randint(1, maxnode)) for node in G.nodes}
@@ -51,7 +44,7 @@ def write(G, pos, dest, origin):
     for edge in G.edges:
         cut = str(edge)
         cut = cut.strip()
-        cut = cut.replace(" ", "") #this all just cleans up the formatting of saving edges
+        cut = cut.replace(" ", "")
         f.write(f"{cut}: {rnd.randint(1,10)}\n")
     f.write(f"Origin:\n{origin}\nDestinations:\n{dest}")
     os.chdir("..")
@@ -63,8 +56,7 @@ def main():
     G.add_nodes_from(li)
 
     randedges(G)
-    randedges(G) #deepen connections
-
+    randedges(G)
 
     dest = rnd.randint(1, len(G.nodes))
     origin = rnd.choice([i for i in range(1, len(G.nodes)) if i != dest])
@@ -77,7 +69,5 @@ def main():
     pos = assign_pos(G)
     index = write(G, pos, dest, origin) 
     return index
-
-# main() #uncomment if you want to run this seperately to search.py
 
 
