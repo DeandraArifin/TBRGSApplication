@@ -7,7 +7,6 @@ from utils import *
 import testcasegen
 
 class Problem:
-    """The abstract class for a formal problem."""
 
     def __init__(self, initial, goal=None):
         """The constructor specifies the initial state, and possibly a goal
@@ -53,10 +52,6 @@ class Problem:
         """For optimization problems, each state has a value. Hill Climbing
         and related algorithms try to maximize this value."""
         raise NotImplementedError
-
-
-# ______________________________________________________________________________
-
 
 class Node:
 
@@ -117,7 +112,6 @@ class Node:
         # with the same state in a Hash Table
         return hash(self.state)
   
-  
 class Graph:
 
     def __init__(self, graph_dict=None, directed=True):
@@ -160,12 +154,6 @@ class Graph:
         nodes = s1.union(s2)
         return list(nodes)
 
-def UndirectedGraph(graph_dict=None):
-    # Build a Graph where every edge (including future ones) goes both ways.
-    # We should never need to use this though.. the graphs are directed.
-    return Graph(graph_dict=graph_dict, directed=False)
-
-#create the class for the graph problem, initial and goal states will later be initialized when we define the running function to run in main
 class GraphProblem(Problem):
     """The problem of searching a graph from one node to another."""
 
@@ -336,16 +324,11 @@ def runOurGraph(ourGraph, origin, destination, search_algo):
     
     #adds in the actions taken FROM initial state to goal state (excludes initial state in path)
     while pNode.parent:
-        # print(f"Node: {pNode.state}, Parent: {pNode.parent.state if pNode.parent else None}")
         path.insert(0, pNode.action)
         pNode = pNode.parent
-
-    # Uncomment the following line if you want for debugging, should not be printing in final submission
-    # print(f"Our Path Finding Problem: The path from init to goal according to {search_algo.__name__} is: ", path)
     return path, explored, goal_state
     
 def main():
-        #Trying to implement test case generation into here, which will also help with visualisation.
         generate = False
         filename = sys.argv[1]
         if filename.lower() == 'generate':
@@ -353,52 +336,41 @@ def main():
             i = testcasegen.main()
             os.chdir("./GeneratedPaths")
             filename = f"GenPathFinder{i}.txt"
-            # Uncomment the following line if you want for debugging, should not be printing in final submission
-            # print(filename)
         else:
-            # Uncomment the following line if you want for debugging, should not be printing in final submission
-            # print(filename)
             generate = False
             pass
         method = sys.argv[2]
-        # breakpoint()
 
-        # So the use of this is as specified in the assignment doc, (python search.py <filename> <method>)
-        # search.py PathFinder-test.txt DFS (will currently just return nothing, but useful to see the test results for loading in)
-        # Could maybe add some error handling to be more user friendly
+        gui_enabled = 'GUI' in sys.argv  # Check for GUI flag
 
         import loadproblem
         origin, destination, edges, nodes = loadproblem.loadproblem(filename)
-        # Uncomment the following line if you want for debugging, should not be printing in final submission
-        # print(f"Origin: {origin}\nDestination:{destination}")
+
         if "GenPathFinder" not in filename:
             os.chdir("..")
 
         adjacency_list = convert_to_adjacency_list(loadproblem.edges)
-
-        # Uncomment the following if you want the adjacency list printed - not needed to be printed unless debugging
-        # print("adjacency list = ", adjacency_list)
         
-        #reformats edges and nodes into a graph constructed like the romania map
-        #initializes it with the adjacency list, containing nodes, child nodes and the weights between parent and child nodes
         ourGraph = Graph(adjacency_list)
-        #if generate == False:
-        newg, pos = loadproblem.todraw(nodes, edges, origin, destination)
-        #locations holds the coordinates of the nodes
+
+        if gui_enabled:
+            newg, pos = loadproblem.todraw(nodes, edges, origin, destination)
+
+
         ourGraph.locations = loadproblem.nodes       
        
         
-        if method == 'DFS':
+        if method.upper() == 'DFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, depth_first_graph_search)
-        elif method == 'BFS':
+        elif method.upper() == 'BFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, breadth_first_graph_search)
-        elif method == 'Astar':
+        elif method == 'A*':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, astar_search)
-        elif method == 'GBFS':
+        elif method.upper() == 'GBFS':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, greedy_best_first_graph_search)
-        elif method == 'CUS1':
+        elif method.upper() == 'CUS1':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, cus1_search)
-        elif method == 'CUS2':
+        elif method.upper() == 'CUS2':
               result, explored, goal_state = runOurGraph(ourGraph, origin, destination, cus2_search)
         else:
               print(f"Method {method} not implemented.")
@@ -406,30 +378,21 @@ def main():
               sys.exit(1)
 
         if result != None:
-            #   goal, nodes_expanded, path = result
-            #   logic is that all nodes created will be the initial, goal + any other nodes in the explored set
-            #   initializes nodes_expanded with the explored set
-              nodes_expanded = explored
+            nodes_expanded = explored
             #   result holds the nodes in the resulting path of the search, so we're adding them to the nodes_expanded list
-              for node in result:
-                    nodes_expanded.add(node)   
+            for node in result:
+                nodes_expanded.add(node)   
                     
             
-              print(f"{filename} {method}")
+            print(f"{filename} {method}")
               
-              #the len() function returns the number of nodes within the nodes_expanded list
-              print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
-            #   print(f"{nodes_expanded}")
-              print(origin, "->", " -> ".join(map(str,result)))
-              #if generate == False:
-              colour_map = ['#91dea8' if node in result else '#2a8d48' if node == origin
-                             else '#f86c62' if node in nodes_expanded else '#D295BF' for node in newg.nodes]
-              loadproblem.draw(newg, pos, colour_map, origin, destination)
+            #the len() function returns the number of nodes within the nodes_expanded list
+            print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
+            print(origin, "->", " -> ".join(map(str,result)))
 
-                
-
-
-              # Should also be correct format as specified in doc
+            if gui_enabled:
+                colour_map = ['#91dea8' if node in result else '#2a8d48' if node == origin else '#f86c62' if node in nodes_expanded else '#D295BF' for node in newg.nodes]
+                loadproblem.draw(newg, pos, colour_map, origin, destination)
 
         else:
               print("No path found.")
