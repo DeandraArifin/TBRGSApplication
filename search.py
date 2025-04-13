@@ -189,15 +189,15 @@ class GraphProblem(Problem):
                 
                 #modified to iterate through a list of goals if there's more than one goal
                 if isinstance(self.goal, list):
-                    return int(min(distance(locs[node], locs[g]) for g in self.goal))
+                    return min(distance(locs[node], locs[g]) for g in self.goal)
                 
-                return int(distance(locs[node], locs[self.goal]))
+                return distance(locs[node], locs[self.goal])
 
             #again checks if goal is a list
             if isinstance(self.goal, list):
-                return int(min(distance(locs[node.state], locs[g]) for g in self.goal))
+                return min(distance(locs[node.state], locs[g]) for g in self.goal)
             
-            return int(distance(locs[node.state], locs[self.goal]))
+            return distance(locs[node.state], locs[self.goal])
             
         else:
             return np.inf
@@ -280,21 +280,31 @@ def best_first_graph_search(problem, f, display=True):
     frontier = PriorityQueue('min', f)
     frontier.append(node)
     explored = set()
+    frontier_states = {node.state: node}
+
     while frontier:
         node = frontier.pop()
+        frontier_states.pop(node.state, None)
+
         goal, goal_state = problem.goal_test(node.state)
         if goal:
             if display:
-                print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier, the paths explored are: ", (explored), "what's left in the frontier is: ", [item for priority, item in frontier.heap])
+                print(len(explored), "paths have been expanded and", len(frontier), "paths remain in the frontier.")
             return node, explored, goal_state
+
         explored.add(node.state)
+
         for child in node.expand(problem):
-            if child.state not in explored and child not in frontier:
+            if child.state not in explored and child.state not in frontier_states:
                 frontier.append(child)
-            elif child in frontier:
-                if f(child) < frontier[child]:
-                    del frontier[child]
+                frontier_states[child.state] = child
+            elif child.state in frontier_states:
+                existing = frontier_states[child.state]
+                if f(child) < f(existing):
+                    frontier.remove(existing)
                     frontier.append(child)
+                    frontier_states[child.state] = child
+
     return None, explored, None
 
 def greedy_best_first_graph_search(problem, display=False):

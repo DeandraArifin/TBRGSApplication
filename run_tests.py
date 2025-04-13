@@ -8,7 +8,7 @@ from tabulate import tabulate
 #Comment out "newg, pos = loadproblem.todraw(nodes, edges)" L.382 in main, and uncomment "pass"
 #Comment out "loadproblem.draw(newg, pos, colour_map)" L.420 in main
 
-methods = ['DFS', 'BFS', 'UCS', 'GBFS', 'Astar']
+methods = ['DFS', 'BFS', 'CUS1', 'CUS2', 'GBFS', 'A*']
 testcases = [
     'test_cyclic.txt',
     'test_deadend.txt',
@@ -18,9 +18,11 @@ testcases = [
     'test_grid_style.txt',
     'test_long_linear.txt',
     'test_loops_multiple_paths.txt',
+    'test_massive.txt',
     'test_multiple_destinations.txt',
     'test_unreachable.txt'
 ]
+
 
 Results = []
 
