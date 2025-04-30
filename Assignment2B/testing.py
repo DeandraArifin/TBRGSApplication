@@ -2,7 +2,7 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 
-scats_data = pd.read_excel('Resources/Scats_Data_October_2006.xls', sheet_name='Data', skiprows=1)
+scats_data = pd.read_excel('Assignment2B\Resources\Scats_Data_October_2006.xls', sheet_name='Data', skiprows=1)
 scats_sites = scats_data[['SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE']].drop_duplicates()
 
 G = nx.Graph()
