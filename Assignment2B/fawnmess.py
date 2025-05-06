@@ -5,6 +5,7 @@ import tensorflow
 import keras
 from sklearn.preprocessing import MinMaxScaler
 import math
+import haversine as hs
 
 def findspeed(flow):
     a = -1.4648375
@@ -46,11 +47,6 @@ series = scats_longform[['SCATS Number','Date', 'Flow']]
 hourly_data = scats_longform.groupby(['SCATS Number', 'Date', 'Hour'])['Flow'].sum().reset_index()
 hourly_data['Speed'] = hourly_data['Flow'].apply(findspeed)
 
-
-
-# series['speed'] = np.nan
-
-# for flow in series['Flow']:
-    
+#haversine works by hs.haversine(loc1, loc2) where locs are (latitude, longitude)    
 
 print(hourly_data)
