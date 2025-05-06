@@ -25,6 +25,24 @@ scats_longform = scats_longform.sort_values('DateTime')
 
 series = scats_longform[['DateTime', 'Flow']]
 
+def findspeed(flow):
+    a = -1.4648375
+    b = 93.75
+    c = -flow
 
+    discriminant = b**2 - 4*a*c
+    if discriminant < 0:
+        return None #no real solution found
+    
+    sqrt_disc = math.sqrt(discriminant)
+    speed1 = (-b + sqrt_disc) / (2*a)
+    speed2 = (-b - sqrt_disc) / (2*a)
+
+    return max(speed1, speed2) if speed1 >= 0 and speed2 >= 0 else (speed1 if speed1 >= 0 else speed2)
+
+series['speed'] = np.nan
+
+for flow in series['flow']:
+    
 
 print(series)
