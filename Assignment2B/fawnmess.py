@@ -1,12 +1,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import tensorflow
+import tensorflow as tf
 import keras
 from sklearn.preprocessing import MinMaxScaler
 import math
 import haversine as hs
 import networkx as nx
+import sys
 
 TF_ENABLE_ONEDNN_OPTS=0
 
@@ -71,24 +72,47 @@ def dataframe(scats_df):
 def prepare_all_sites(hourly_data, seq_length=24):
     all_X, all_y = [], []
     site_ids = hourly_data['SCATS Number'].unique() #might want to change to long/lat instead of scats number
-    scaler = MinMaxScaler()
-    all_feats = hourly_data[['Flow', 'Speed']].values
-    scaler.fit(all_feats)
-    for id in site_ids:
-        data = hourly_data[hourly_data['SCATS Number'] == id].sort_values(['Date', 'Hour'])
-        features = data[['Flow', 'Speed']].values
-        if len(features) <= seq_length: #skips incomplete sequences in sites
-            continue
+    scalers = {}
+    for site_id in site_ids:
+        site_data = hourly_data[hourly_data['SCATS Number'] == site_id].sort_values(['Date', 'Hour'])
+        features = site_data[['Flow', 'Speed']].values
+
+        if len(features) <= seq_length:
+            continue  # Not enough data to form a sequence
+
+        # Create and fit a scaler for this site
+        scaler = MinMaxScaler()
+        scaler.fit(features)
+        scalers[site_id] = scaler
+
         scaled = scaler.transform(features)
+
         for i in range(len(scaled) - seq_length):
             X_seq = scaled[i:i + seq_length]
-            y_seq = scaled[1 + seq_length]
+            y_seq = scaled[i + seq_length]
             all_X.append(X_seq)
             all_y.append(y_seq)
     return np.array(all_X), np.array(all_y), scaler
 
-def build_model(input_shape):
-    model = keras.models.Sequential([keras.layers.LSTM(64, input_shape=input_shape), keras.layers.Dense(32, activation='relu'), keras.layers.Dense(input_shape[1])])
+def build_lstm(input_shape):
+    model = keras.models.Sequential([
+        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu', input_shape=input_shape),
+        keras.layers.MaxPooling1D(pool_size=2),
+        keras.layers.LSTM(128, input_shape=input_shape, return_sequences=True),
+        keras.layers.LSTM(128, input_shape=input_shape),
+        keras.layers.Dense(64, activation='relu'), 
+        keras.layers.Dense(input_shape[1])])
+    model.compile(optimizer='adam', loss='mse')
+    return model
+
+def build_gru(timesteps, features):
+    input_shape = (timesteps, features)
+    model = keras.models.Sequential([
+        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu', input_shape=input_shape),
+        keras.layers.MaxPooling1D(pool_size=2),
+        keras.layers.GRU(128),
+        keras.layers.Dense(64, activation='relu'), 
+        keras.layers.Dense(features)])
     model.compile(optimizer='adam', loss='mse')
     return model
 
@@ -97,7 +121,11 @@ def prep(hourly_data):
     split = int(0.8 * len(X))
     X_train, X_test = X[:split], X[split:] #either side of split
     y_train, y_test = y[:split], y[split:]
-    model = build_model((X.shape[1], X.shape[2]))
+    model = sys.argv[1]
+    if model == "lstm":
+        model = build_lstm((X.shape[1], X.shape[2]))
+    if model == 'gru':
+        model = build_gru(X.shape[1], X.shape[2])
     model.summary()
     model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.1)
     preditctions = model.predict(X_test)
@@ -120,8 +148,15 @@ def main():
     hourly_data = dataframe(scats_df)
     #print(hourly_data)
     predicted, actual = prep(hourly_data)
+    results_df = pd.DataFrame({'Actual Flow': actual[:, 0],
+        'Predicted Flow': predicted[:, 0],
+        'Actual Speed': actual[:, 1],
+        'Predicted Speed': predicted[:, 1]})
+    results_df.to_csv('predicted_vs_actual.csv', index=False)
+    print(actual[:20])
     makemap(predicted, actual)
 
 #haversine works by hs.haversine(loc1, loc2) where locs are (latitude, longitude)    
 
-main()
+if __name__ == "__main__":
+      main()
