@@ -68,25 +68,6 @@ def dataframe(scats_df):
 
     return hourly_data
 
-def makemap(scats_data):
-    scats_sites = scats_data[['SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE']].drop_duplicates()
-    G = nx.Graph()
-
-    for idx, row in scats_sites.iterrows():
-        scats_id = row['SCATS Number']
-        lat = row['NB_LATITUDE']
-        lon = row['NB_LONGITUDE']
-        G.add_node(scats_id, pos=(lon, lat))  
-
-    pos = nx.get_node_attributes(G, 'pos')
-
-    plt.figure(figsize=(10, 8))
-    nx.draw(G, pos, with_labels=True, node_size=50)
-    plt.title('SCATS Sites Locations')
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
-    plt.show()
-
 def prepare_all_sites(hourly_data, seq_length=24):
     all_X, all_y = [], []
     site_ids = hourly_data['SCATS Number'].unique() #might want to change to long/lat instead of scats number
@@ -107,7 +88,9 @@ def prepare_all_sites(hourly_data, seq_length=24):
     return np.array(all_X), np.array(all_y), scaler
 
 def build_model(input_shape):
-    model = keras.models.Sequential([keras.layers.LSTM(64, input_shape=input_shape), keras.layers.Dense(32, activation='relu')])
+    model = keras.models.Sequential([keras.layers.LSTM(64, input_shape=input_shape), keras.layers.Dense(32, activation='relu'), keras.layers.Dense(input_shape[1])])
+    model.compile(optimizer='adam', loss='mse')
+    return model
 
 def prep(hourly_data):
     X, y, scaler = prepare_all_sites(hourly_data)
@@ -115,13 +98,29 @@ def prep(hourly_data):
     X_train, X_test = X[:split], X[split:] #either side of split
     y_train, y_test = y[:split], y[split:]
     model = build_model((X.shape[1], X.shape[2]))
-    
+    model.summary()
+    model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.1)
+    preditctions = model.predict(X_test)
+    predicted = scaler.inverse_transform(preditctions)
+    actual = scaler.inverse_transform(y_test)
+    return predicted, actual
+
+def makemap(predicted, actual):
+    plt.figure(figsize=(12, 6))
+    plt.plot(actual[:, 0], label='Actual Flow')
+    plt.plot(predicted[:, 0], label="Predicted Flow")
+    plt.title('Flow Prediction')
+    plt.xlabel('Time Step')
+    plt.ylabel('Flow')
+    plt.legend()
+    plt.show()
+
 def main():
     scats_df = pd.read_excel('Resources/Scats_Data_October_2006.xls', sheet_name='Data', skiprows=1)
     hourly_data = dataframe(scats_df)
-    makemap(scats_df)
     #print(hourly_data)
-    prep(hourly_data)
+    predicted, actual = prep(hourly_data)
+    makemap(predicted, actual)
 
 #haversine works by hs.haversine(loc1, loc2) where locs are (latitude, longitude)    
 
