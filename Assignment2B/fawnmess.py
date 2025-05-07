@@ -61,7 +61,6 @@ def dataframe(scats_df):
 
     for i in uniqueSCATS:
         mean = hourly_data.loc[hourly_data['SCATS Number'].eq(i), 'Speed'].mean()
-        print(f"Mean of {i} is {mean}")
         condition = (hourly_data['SCATS Number'] == i) & (hourly_data['Speed'].isna())
         hourly_data.loc[condition, 'Speed'] = mean
 
