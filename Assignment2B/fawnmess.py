@@ -33,7 +33,7 @@ def dataframe(scats_df):
 
     intervals = [f'V{i:02}' for i in range(96)] #V00 to V95
 
-    scats_longform = scats_df.melt(id_vars=['Date', 'NB_LATITUDE', 'NB_LONGITUDE'], value_vars=intervals, var_name='Interval', value_name='Flow')
+    scats_longform = scats_df.melt(id_vars=['Date', 'SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE'], value_vars=intervals, var_name='Interval', value_name='Flow')
     # print(scats_longform)
 
     scats_longform['IntervalNum'] = scats_longform['Interval'].str.extract(r'V(\d+)').astype(int)
@@ -50,7 +50,7 @@ def dataframe(scats_df):
 
     series = scats_longform[['NB_LATITUDE','NB_LONGITUDE','Date', 'Flow']]
 
-    hourly_data = scats_longform.groupby(['NB_LATITUDE','NB_LONGITUDE', 'Date', 'Hour'])['Flow'].sum().reset_index()
+    hourly_data = scats_longform.groupby(['SCATS Number', 'Date', 'Hour'])['Flow'].sum().reset_index()
     hourly_data['Speed'] = hourly_data['Flow'].apply(findspeed)
 
     uniqueSCATS = hourly_data['SCATS Number'].unique()
@@ -64,7 +64,7 @@ def dataframe(scats_df):
     false_ints = hourly_data[hourly_data['SCATS Number'] == False].index
     hourly_data = hourly_data.drop(false_ints)
 
-    print(hourly_data)
+    #print(hourly_data)
 
     return hourly_data
 
