@@ -8,6 +8,7 @@ import math
 import haversine as hs
 import networkx as nx
 import sys
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 TF_ENABLE_ONEDNN_OPTS=0
 
@@ -153,9 +154,13 @@ def main():
         'Actual Speed': actual[:, 1],
         'Predicted Speed': predicted[:, 1]})
     results_df.to_csv('predicted_vs_actual.csv', index=False)
-    print(actual[:20])
     makemap(predicted, actual)
-
+    mae = mean_absolute_error(actual, predicted)
+    mse = mean_squared_error(actual, predicted)
+    r2 = r2_score(actual, predicted)
+    print(f'Mean Absolute Error: {mae:.4f}')
+    print(f'Mean Squared Error: {mse:.4f}')
+    print(f'R2 Score: {r2:.4f}')
 #haversine works by hs.haversine(loc1, loc2) where locs are (latitude, longitude)    
 
 if __name__ == "__main__":
