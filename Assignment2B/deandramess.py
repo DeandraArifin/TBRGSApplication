@@ -54,21 +54,7 @@ scats_data['SCATS Number'] = scats_data['SCATS Number'].astype(int)
 scats_site_data['SCATS Number'] = scats_site_data['SCATS Number'].astype(int)
 scats_site_data = scats_site_data.drop_duplicates(subset='SCATS Number', keep='first')
 
-filtered_data = pd.merge(scats_data, scats_site_data, on='SCATS Number', how='inner')
+merged_data = pd.merge(scats_data, scats_site_data, on='SCATS Number', how='inner')
+merged_data.to_csv('Resources/merged_data.csv', index=False)
+print(merged_data)
 
-print(filtered_data)
-
-# traffic_count_data = traffic_count_data.drop(columns=['TFM DESC', ])
-# matches = scats_data['NB_LATITUDE'].isin(traffic_count_data['Y'])
-# print(f"TFM_ID matches: {matches.sum()} out of {len(scats_data)}")
-# matched_rows = scats_data[matches]
-# print(matched_rows)
-
-# Filter rows in traffic_count_data where TFM_ID is 970
-# specific_rows = traffic_count_data[traffic_count_data['ROAD_NBR'] == 2000]
-# print(specific_rows)
-
-
-# Try matching on ROAD_NBR
-# matches = scats_data['SCATS Number'].isin(traffic_count_data['ROAD_NBR'])
-# print(f"ROAD_NBR matches: {matches.sum()} out of {len(scats_data)}")
