@@ -33,7 +33,7 @@ def dataframe(scats_df):
     #print(scats_df.columns)
     scats_df.columns = scats_df.columns.str.strip()
 
-    scats_df['Date'] = pd.to_datetime(scats_df['Date'], dayfirst=True)
+    # scats_df['Date'] = pd.to_datetime(scats_df['Date'], dayfirst=True)
 
     intervals = [f'V{i:02}' for i in range(96)] #V00 to V95
 
@@ -45,7 +45,7 @@ def dataframe(scats_df):
 
     # scats_longform['DateTime'] = scats_longform['Date'] + scats_longform['Time']
 
-    scats_longform['Date'] = scats_longform['Date'].dt.normalize()
+    # scats_longform['Date'] = scats_longform['Date'].dt.normalize()
     scats_longform['Hour'] = (scats_longform['IntervalNum'] * 15) // 60
 
     # print(scats_longform['DateTime', 'Hour'])
@@ -146,7 +146,7 @@ def makemap(predicted, actual):
     plt.show()
 
 def main():
-    scats_df = pd.read_excel('Resources/Scats_Data_October_2006.xls', sheet_name='Data', skiprows=1)
+    scats_df = pd.read_csv('Resources/merged_data.csv')
     hourly_data = dataframe(scats_df)
     #print(hourly_data)
     predicted, actual = prep(hourly_data)
