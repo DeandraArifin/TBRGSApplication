@@ -1,6 +1,8 @@
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import keras
 from sklearn.preprocessing import MinMaxScaler
@@ -123,9 +125,9 @@ def prep(hourly_data):
     X_train, X_test = X[:split], X[split:] #either side of split
     y_train, y_test = y[:split], y[split:]
     model = sys.argv[1]
-    if model == "lstm":
+    if model == "lstm".lower():
         model = build_lstm((X.shape[1], X.shape[2]))
-    if model == 'gru':
+    if model == 'gru'.lower():
         model = build_gru(X.shape[1], X.shape[2])
     model.summary()
     model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.1)
