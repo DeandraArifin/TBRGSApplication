@@ -56,6 +56,7 @@ scats_site_data['SCATS Number'] = scats_site_data['SCATS Number'].astype(int)
 scats_site_data = scats_site_data.drop_duplicates(subset='SCATS Number', keep='first')
 
 merged_data = pd.merge(scats_data, scats_site_data, on='SCATS Number', how='inner')
+merged_data['Date'] = merged_data['Date'].dt.normalize()
 merged_data.to_csv('Resources/merged_data.csv', index=False)
 print(merged_data)
 
