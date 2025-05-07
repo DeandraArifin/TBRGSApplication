@@ -42,6 +42,7 @@ scats_site_data = pd.read_csv('Resources/SCATSSite.csv', sep=';', usecols=range(
 scats_data = pd.read_excel('Resources/Scats_Data_October_2006.xls', sheet_name='Data', skiprows=1)
 traffic_count_data = pd.read_csv('Resources/Traffic_Count_Locations_with_LONG_LAT.csv')
 
+scats_site_data = scats_site_data.drop(columns=['Map reference ', 'Directory'])
 scats_site_data['Site Type'] = scats_site_data['Site Type'].apply(map_site_type_to_key)
 scats_data['CD_MELWAY'] = scats_data['CD_MELWAY'].apply(remove_non_alphanumeric_characters)
 scats_data['SCATS Number'] = scats_data['SCATS Number'].apply(remove_leading_zeroes)
