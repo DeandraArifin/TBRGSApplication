@@ -2,17 +2,16 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import tensorflow as tf
 import keras
-from sklearn.preprocessing import MinMaxScaler
 import math
 import haversine as hs
-import networkx as nx
 import sys
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
-TF_ENABLE_ONEDNN_OPTS=0
+# Disable oneDNN optimizations if needed
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 def findspeed(flow):
     a = -1.4648375
@@ -30,55 +29,42 @@ def findspeed(flow):
     return max(speed1, speed2) if speed1 >= 0 and speed2 >= 0 else (speed1 if speed1 >= 0 else speed2)
 
 def dataframe(scats_df):
-    #print(scats_df.columns)
     scats_df.columns = scats_df.columns.str.strip()
+    scats_df['Date'] = pd.to_datetime(scats_df['Date'], dayfirst=True)
+    intervals = [f'V{i:02}' for i in range(96)]
 
-    # scats_df['Date'] = pd.to_datetime(scats_df['Date'], dayfirst=True)
+    long_df = scats_df.melt(
+        id_vars=['Date', 'SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE'],
+        value_vars=intervals,
+        var_name='Interval',
+        value_name='Flow'
+    )
+    long_df['IntervalNum'] = long_df['Interval'].str.extract(r'V(\d+)').astype(int)
+    long_df['Hour'] = (long_df['IntervalNum'] * 15) // 60
 
-    intervals = [f'V{i:02}' for i in range(96)] #V00 to V95
+    hourly = long_df.groupby(
+        ['SCATS Number', 'Date', 'Hour']
+    )['Flow'].sum().reset_index()
+    hourly['Speed'] = hourly['Flow'].apply(findspeed)
 
-    scats_longform = scats_df.melt(id_vars=['Date', 'SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE'], value_vars=intervals, var_name='Interval', value_name='Flow')
-    # print(scats_longform)
+    # fill NaNs per site with the site mean
+    for site in hourly['SCATS Number'].unique():
+        mean_speed = hourly.loc[hourly['SCATS Number']==site, 'Speed'].mean()
+        mask = (hourly['SCATS Number']==site) & (hourly['Speed'].isna())
+        hourly.loc[mask, 'Speed'] = mean_speed
 
-    scats_longform['IntervalNum'] = scats_longform['Interval'].str.extract(r'V(\d+)').astype(int)
-    scats_longform['Time'] = pd.to_timedelta(scats_longform['IntervalNum'] * 15, unit='min')
+    # drop any invalid SCATS Number entries
+    hourly = hourly[hourly['SCATS Number'].astype(bool)]
+    return hourly
 
-    # scats_longform['DateTime'] = scats_longform['Date'] + scats_longform['Time']
-
-    # scats_longform['Date'] = scats_longform['Date'].dt.normalize()
-    scats_longform['Hour'] = (scats_longform['IntervalNum'] * 15) // 60
-
-    # print(scats_longform['DateTime', 'Hour'])
-
-    scats_longform = scats_longform.sort_values('Hour')
-
-    series = scats_longform[['NB_LATITUDE','NB_LONGITUDE','Date', 'Flow']]
-
-    hourly_data = scats_longform.groupby(['SCATS Number', 'Date', 'Hour'])['Flow'].sum().reset_index()
-    hourly_data['Speed'] = hourly_data['Flow'].apply(findspeed)
-
-    uniqueSCATS = hourly_data['SCATS Number'].unique()
-
-    for i in uniqueSCATS:
-        mean = hourly_data.loc[hourly_data['SCATS Number'].eq(i), 'Speed'].mean()
-        condition = (hourly_data['SCATS Number'] == i) & (hourly_data['Speed'].isna())
-        hourly_data.loc[condition, 'Speed'] = mean
-
-    false_ints = hourly_data[hourly_data['SCATS Number'] == False].index
-    hourly_data = hourly_data.drop(false_ints)
-
-    #print(hourly_data)
-
-    return hourly_data
 
 def prepare_all_sites(hourly_data, seq_length=24):
     all_X, all_y = [], []
-    site_ids = hourly_data['SCATS Number'].unique() #might want to change to long/lat instead of scats number
     scalers = {}
+    site_ids = hourly_data['SCATS Number'].unique()
     for site_id in site_ids:
-        site_data = hourly_data[hourly_data['SCATS Number'] == site_id].sort_values(['Date', 'Hour'])
-        features = site_data[['Flow', 'Speed']].values
-
+        site_df = hourly_data[hourly_data['SCATS Number']==site_id].sort_values(['Date','Hour'])
+        features = site_df[['Flow','Speed']].values
         if len(features) <= seq_length:
             continue  # Not enough data to form a sequence
 
@@ -86,7 +72,6 @@ def prepare_all_sites(hourly_data, seq_length=24):
         scaler = MinMaxScaler()
         scaler.fit(features)
         scalers[site_id] = scaler
-
         scaled = scaler.transform(features)
 
         for i in range(len(scaled) - seq_length):
@@ -94,7 +79,9 @@ def prepare_all_sites(hourly_data, seq_length=24):
             y_seq = scaled[i + seq_length]
             all_X.append(X_seq)
             all_y.append(y_seq)
+
     return np.array(all_X), np.array(all_y), scaler
+
 
 def build_lstm(input_shape):
     model = keras.models.Sequential([
@@ -107,6 +94,7 @@ def build_lstm(input_shape):
     model.compile(optimizer='adam', loss='mse')
     return model
 
+
 def build_gru(timesteps, features):
     input_shape = (timesteps, features)
     model = keras.models.Sequential([
@@ -118,51 +106,85 @@ def build_gru(timesteps, features):
     model.compile(optimizer='adam', loss='mse')
     return model
 
-def prep(hourly_data):
-    X, y, scaler = prepare_all_sites(hourly_data)
-    split = int(0.8 * len(X))
-    X_train, X_test = X[:split], X[split:] #either side of split
-    y_train, y_test = y[:split], y[split:]
-    model = sys.argv[1]
-    if model == "lstm".lower():
-        model = build_lstm((X.shape[1], X.shape[2]))
-    if model == 'gru'.lower():
-        model = build_gru(X.shape[1], X.shape[2])
-    model.summary()
-    model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.1)
-    preditctions = model.predict(X_test)
-    predicted = scaler.inverse_transform(preditctions)
-    actual = scaler.inverse_transform(y_test)
-    return predicted, actual
+
+def prep_all_sites(hourly_data, model_type):
+    """Train a separate model on each SCATS site."""
+    results = []
+    os.makedirs('models', exist_ok=True)
+    for site in hourly_data['SCATS Number'].unique():
+        site_data = hourly_data[hourly_data['SCATS Number']==site].copy()
+        X, y, scaler = prepare_all_sites(site_data, seq_length=24)
+        if len(X) == 0:
+            continue
+
+        # split
+        split = int(0.8 * len(X))
+        X_train, X_test = X[:split], X[split:]
+        y_train, y_test = y[:split], y[split:]
+
+        # build
+        if model_type == 'lstm':
+            model = build_lstm((X.shape[1], X.shape[2]))
+        else: # Change this when adding more models
+            model = build_gru(X.shape[1], X.shape[2])
+
+        # train
+        model.fit(
+            X_train, y_train,
+            epochs=20,
+            batch_size=32,
+            validation_split=0.1,
+            verbose=0
+        )
+
+        # predict & evaluate
+        pred = model.predict(X_test)
+        pred_inv = scaler.inverse_transform(pred)
+        act_inv  = scaler.inverse_transform(y_test)
+        mae = mean_absolute_error(act_inv, pred_inv)
+        mse = mean_squared_error(act_inv, pred_inv)
+        r2  = r2_score(act_inv, pred_inv)
+        print(f"Site {site}: MAE={mae:.2f}, MSE={mse:.2f}, R2={r2:.2f}")
+
+        # save model & metrics
+        model.save(f"models/{model_type}_site_{site}.h5")
+        results.append((site, mae, mse, r2))
+
+    return results
+
 
 def makemap(predicted, actual):
     plt.figure(figsize=(12, 6))
     plt.plot(actual[:, 0], label='Actual Flow')
-    plt.plot(predicted[:, 0], label="Predicted Flow")
+    plt.plot(predicted[:, 0], label='Predicted Flow')
     plt.title('Flow Prediction')
     plt.xlabel('Time Step')
     plt.ylabel('Flow')
     plt.legend()
     plt.show()
 
+
 def main():
-    scats_df = pd.read_csv('Resources/merged_data.csv')
+    if len(sys.argv) < 2:
+        print("Usage: python fawnmess.py [lstm|gru]")
+        sys.exit(1)
+    model_type = sys.argv[1].lower()
+    assert model_type in ('lstm', 'gru'), "Model must be 'lstm' or 'gru'"
+
+    scats_df = pd.read_excel(
+        'Resources/Scats_Data_October_2006.xls',
+        sheet_name='Data',
+        skiprows=1
+    )
     hourly_data = dataframe(scats_df)
-    #print(hourly_data)
-    predicted, actual = prep(hourly_data)
-    results_df = pd.DataFrame({'Actual Flow': actual[:, 0],
-        'Predicted Flow': predicted[:, 0],
-        'Actual Speed': actual[:, 1],
-        'Predicted Speed': predicted[:, 1]})
-    results_df.to_csv('predicted_vs_actual.csv', index=False)
-    makemap(predicted, actual)
-    mae = mean_absolute_error(actual, predicted)
-    mse = mean_squared_error(actual, predicted)
-    r2 = r2_score(actual, predicted)
-    print(f'Mean Absolute Error: {mae:.4f}')
-    print(f'Mean Squared Error: {mse:.4f}')
-    print(f'R2 Score: {r2:.4f}')
-#haversine works by hs.haversine(loc1, loc2) where locs are (latitude, longitude)    
+
+    scores = prep_all_sites(hourly_data, model_type)
+
+    # save metrics summary
+    metrics_df = pd.DataFrame(scores, columns=['site', 'mae', 'mse', 'r2'])
+    metrics_df.to_csv(f"{model_type}_site_metrics.csv", index=False)
+
+    print(f"Saved per-site metrics to {model_type}_site_metrics.csv")
 
 if __name__ == "__main__":
-      main()
+    main()
