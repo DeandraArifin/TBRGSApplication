@@ -100,7 +100,7 @@ def main():
 
     interval_data = dataframe(scats_df)
     unique_locations = find_lat_long_value(scats_df)
-    unique_locations.to_csv('Resources/scats_lat_lon_data.csv')
+    unique_locations.to_csv('Resources/scats_lat_lon_data.csv', index=False)
     chart_correlation_matrix(interval_data)
     interval_data.to_csv('Resources/interval_data.csv', index=False)
     
