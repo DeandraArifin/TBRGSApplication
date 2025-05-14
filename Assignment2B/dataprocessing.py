@@ -84,12 +84,26 @@ def chart_correlation_matrix(df):
     return corr
 
 def find_lat_long_value(df):
+    #handle missing values
+    df['NB_LATITUDE'] = df['NB_LATITUDE'].replace(0, np.nan)
+    df['NB_LONGITUDE'] = df['NB_LONGITUDE'].replace(0, np.nan)
+    
+    if df['NB_LATITUDE'].isna().any():
+        df['NB_LATITUDE'] = df['NB_LATITUDE'].bfill()
+    
+    if df['NB_LONGITUDE'].isna().any():
+        df['NB_LONGITUDE'] = df['NB_LONGITUDE'].bfill()
+
     df.groupby('SCATS Number')[['NB_LATITUDE', 'NB_LONGITUDE']].nunique()
-    unique_locations = df[['SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE']].drop_duplicates().sort_values('SCATS Number')
+    unique_locations = df[['SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE', 'Location Description']].drop_duplicates().sort_values('SCATS Number')
     
     #just grabbing the first entry's latitude and longitude
-    first_lat_lon_per_site = unique_locations.groupby('SCATS Number').first().reset_index()
-    return first_lat_lon_per_site
+    grouped = unique_locations.groupby('SCATS Number').agg({
+        'NB_LATITUDE': 'mean',
+        'NB_LONGITUDE': 'mean',
+        'Location Description': 'first'  # or 'mode' if needed
+    }).reset_index()
+    return grouped
     
     
     
@@ -101,7 +115,7 @@ def main():
     interval_data = dataframe(scats_df)
     unique_locations = find_lat_long_value(scats_df)
     unique_locations.to_csv('Resources/scats_lat_lon_data.csv', index=False)
-    chart_correlation_matrix(interval_data)
+    # chart_correlation_matrix(interval_data)
     interval_data.to_csv('Resources/interval_data.csv', index=False)
     
 
