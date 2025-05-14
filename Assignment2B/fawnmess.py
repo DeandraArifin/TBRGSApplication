@@ -103,7 +103,6 @@ def build_lstm(input_shape):
         keras.layers.Dense(64, activation='relu'), 
         keras.layers.Dense(1)])
     model.compile(optimizer='adam', loss=keras.losses.Huber())
-    model.summary()
     return model
 
 
@@ -117,7 +116,6 @@ def build_gru(timesteps, features):
         keras.layers.Dense(64, activation='relu'), 
         keras.layers.Dense(1)])
     model.compile(optimizer='adam', loss=keras.losses.Huber())
-    model.summary()
     return model
 
 def build_rnn(timesteps, features):
@@ -130,7 +128,6 @@ def build_rnn(timesteps, features):
         keras.layers.Dense(64, activation='relu'), 
         keras.layers.Dense(1)])
     model.compile(optimizer='adam', loss=keras.losses.Huber())
-    model.summary()
     return model
 
 def prep_all_sites(hourly_data, model_type):
