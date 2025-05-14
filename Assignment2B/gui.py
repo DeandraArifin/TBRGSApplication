@@ -22,6 +22,34 @@ def draw_route(map_widget, path_coords):
     # Fit map view to bounding box
     map_widget.fit_bounding_box(top_left, bottom_right)
 
+def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_opt, scats_site_data, error_text):
+    origin = origin_opt.get()
+    destination = dest_opt.get()
+    time = time_opt.get()
+    model = model_opt.get()
+    
+    if error_text.winfo_ismapped():
+        error_text.pack_forget()
+    
+    if not origin or not destination or not time or not model:
+        if not error_text.winfo_ismapped():  # Check if the label is already packed
+            error_text.pack(anchor='w', pady=30)
+        print("All fields must be selected")
+        return
+    
+    selection_text = tk.Label(left_frame, text=f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}", font=('Arial', 20))
+    selection_text.pack(anchor="w", pady=30)
+    print(f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}")
+    
+    #placeholder path, supposed to be dynamically retrieved
+    path = path = [
+    (scats_site_data.iloc[0]["NB_LATITUDE"], scats_site_data.iloc[0]["NB_LONGITUDE"]),
+    (scats_site_data.iloc[16]["NB_LATITUDE"], scats_site_data.iloc[16]["NB_LONGITUDE"]),
+    (scats_site_data.iloc[1]["NB_LATITUDE"], scats_site_data.iloc[1]["NB_LONGITUDE"])]
+    
+    draw_route(map_widget, path)
+    
+
 def main():
     window = tk.Tk()
 
@@ -75,12 +103,8 @@ def main():
     model_option_menu = tk.OptionMenu(left_frame, model_opt, *model_options)
     model_option_menu.pack(anchor="w", pady=5)
     
-    path = path = [
-    (scats_site_data.iloc[0]["NB_LATITUDE"], scats_site_data.iloc[0]["NB_LONGITUDE"]),
-    (scats_site_data.iloc[16]["NB_LATITUDE"], scats_site_data.iloc[16]["NB_LONGITUDE"]),
-    (scats_site_data.iloc[1]["NB_LATITUDE"], scats_site_data.iloc[1]["NB_LONGITUDE"])]
-    
-    button = tk.Button(left_frame, text="Find Route", command=lambda: draw_route(map_widget, path)) #add command property, pass in the function to execute action
+    error_text = tk.Label(left_frame, text="All fields must be selected", font=('Arial', 20))
+    button = tk.Button(left_frame, text="Find Route", command=lambda: on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_opt, scats_site_data, error_text)) #add command property, pass in the function to execute action
     button.pack(anchor="w", pady=30)
     
     map_widget = TkinterMapView(right_frame, width=900, height=600)
