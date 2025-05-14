@@ -1,4 +1,5 @@
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -53,6 +54,14 @@ def dataframe(scats_df):
         mask = (hourly['SCATS Number']==site) & (hourly['Speed'].isna())
         hourly.loc[mask, 'Speed'] = mean_speed
 
+    #temporal features based from previous assessment
+    hourly['DayOfWeek'] = hourly['Date'].dt.dayofweek
+    hourly['IsWeekend'] = hourly['DayOfWeek'].isin([5,6]).astype(int)
+    hourly['Hour_sin'] = np.sin(2 * np.pi * hourly['Hour'] / 24)
+    hourly['Hour_cos'] = np.cos(2 * np.pi * hourly['Hour'] / 24)
+    hourly['DOW_sin'] = np.sin(2 * np.pi * hourly['DayOfWeek'] / 7)
+    hourly['DOW_cos'] = np.cos(2 * np.pi * hourly['DayOfWeek'] / 7)
+
     # drop any invalid SCATS Number entries
     hourly = hourly[hourly['SCATS Number'].astype(bool)]
     return hourly
@@ -64,7 +73,8 @@ def prepare_all_sites(hourly_data, seq_length=24):
     site_ids = hourly_data['SCATS Number'].unique()
     for site_id in site_ids:
         site_df = hourly_data[hourly_data['SCATS Number']==site_id].sort_values(['Date','Hour'])
-        features = site_df[['Flow','Speed']].values
+        feature_cols = ['Flow', 'Speed', 'Hour_sin', 'Hour_cos', 'DayOfWeek', 'IsWeekend']
+        features = site_df[feature_cols].values
         if len(features) <= seq_length:
             continue  # Not enough data to form a sequence
 
@@ -76,7 +86,7 @@ def prepare_all_sites(hourly_data, seq_length=24):
 
         for i in range(len(scaled) - seq_length):
             X_seq = scaled[i:i + seq_length]
-            y_seq = scaled[i + seq_length]
+            y_seq = scaled[i + seq_length][0]  # Only predict flow
             all_X.append(X_seq)
             all_y.append(y_seq)
 
@@ -85,27 +95,43 @@ def prepare_all_sites(hourly_data, seq_length=24):
 
 def build_lstm(input_shape):
     model = keras.models.Sequential([
-        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu', input_shape=input_shape),
+        keras.layers.Input(input_shape),
+        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu'),
         keras.layers.MaxPooling1D(pool_size=2),
-        keras.layers.LSTM(128, input_shape=input_shape, return_sequences=True),
-        keras.layers.LSTM(128, input_shape=input_shape),
+        #keras.layers.LSTM(128, input_shape=input_shape, return_sequences=True),
+        keras.layers.LSTM(64),
         keras.layers.Dense(64, activation='relu'), 
-        keras.layers.Dense(input_shape[1])])
-    model.compile(optimizer='adam', loss='mse')
+        keras.layers.Dense(1)])
+    model.compile(optimizer='adam', loss=keras.losses.Huber())
+    model.summary()
     return model
 
 
 def build_gru(timesteps, features):
     input_shape = (timesteps, features)
     model = keras.models.Sequential([
-        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu', input_shape=input_shape),
+        keras.layers.Input(input_shape),
+        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu'),
         keras.layers.MaxPooling1D(pool_size=2),
-        keras.layers.GRU(128),
+        keras.layers.GRU(64),
         keras.layers.Dense(64, activation='relu'), 
-        keras.layers.Dense(features)])
-    model.compile(optimizer='adam', loss='mse')
+        keras.layers.Dense(1)])
+    model.compile(optimizer='adam', loss=keras.losses.Huber())
+    model.summary()
     return model
 
+def build_rnn(timesteps, features):
+    input_shape = (timesteps, features)
+    model = keras.models.Sequential([
+        keras.layers.Input(input_shape),
+        keras.layers.Conv1D(filters=128, kernel_size=3, activation='relu'),
+        keras.layers.MaxPool1D(pool_size=2),
+        keras.layers.SimpleRNN(64),
+        keras.layers.Dense(64, activation='relu'), 
+        keras.layers.Dense(1)])
+    model.compile(optimizer='adam', loss=keras.losses.Huber())
+    model.summary()
+    return model
 
 def prep_all_sites(hourly_data, model_type):
     """Train a separate model on each SCATS site."""
@@ -125,8 +151,10 @@ def prep_all_sites(hourly_data, model_type):
         # build
         if model_type == 'lstm':
             model = build_lstm((X.shape[1], X.shape[2]))
-        else: # Change this when adding more models
+        elif model_type == 'gru': # Change this when adding more models
             model = build_gru(X.shape[1], X.shape[2])
+        elif model_type == 'rnn':
+            model = build_rnn(X.shape[1], X.shape[2])
 
         # train
         model.fit(
@@ -139,15 +167,17 @@ def prep_all_sites(hourly_data, model_type):
 
         # predict & evaluate
         pred = model.predict(X_test)
-        pred_inv = scaler.inverse_transform(pred)
-        act_inv  = scaler.inverse_transform(y_test)
+        pad = np.pad(pred, ((0, 0), (0, 5)), mode='constant')
+        pred_inv = scaler.inverse_transform(pad)[:, 0] #only take the flow column
+        y_testpad = np.pad(y_test.reshape(-1, 1), ((0, 0), (0, 5)), mode='constant')
+        act_inv  = scaler.inverse_transform(y_testpad)[:, 0] #only take flow
         mae = mean_absolute_error(act_inv, pred_inv)
         mse = mean_squared_error(act_inv, pred_inv)
         r2  = r2_score(act_inv, pred_inv)
-        print(f"Site {site}: MAE={mae:.2f}, MSE={mse:.2f}, R2={r2:.2f}")
+        print(f"Site {site}: MAE={mae:.2f}, MSE={mse:.2f}, R2={r2*100:.2f}%")
 
         # save model & metrics
-        model.save(f"models/{model_type}_site_{site}.h5")
+        keras.saving.save_model(model, 'my_model.keras')
         results.append((site, mae, mse, r2))
 
     return results
@@ -166,10 +196,10 @@ def makemap(predicted, actual):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python fawnmess.py [lstm|gru]")
+        print("Usage: python fawnmess.py [lstm|gru|rnn]")
         sys.exit(1)
     model_type = sys.argv[1].lower()
-    assert model_type in ('lstm', 'gru'), "Model must be 'lstm' or 'gru'"
+    assert model_type in ('lstm', 'gru', 'rnn'), "Model must be 'lstm', 'gru' or 'rnn'"
 
     scats_df = pd.read_excel(
         'Resources/Scats_Data_October_2006.xls',
