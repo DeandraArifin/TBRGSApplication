@@ -1,4 +1,5 @@
 import os
+from more_itertools import unique_everseen
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -82,15 +83,27 @@ def chart_correlation_matrix(df):
 
     return corr
 
+def find_lat_long_value(df):
+    df.groupby('SCATS Number')[['NB_LATITUDE', 'NB_LONGITUDE']].nunique()
+    unique_locations = df[['SCATS Number', 'NB_LATITUDE', 'NB_LONGITUDE']].drop_duplicates().sort_values('SCATS Number')
+    
+    #just grabbing the first entry's latitude and longitude
+    first_lat_lon_per_site = unique_locations.groupby('SCATS Number').first().reset_index()
+    return first_lat_lon_per_site
+    
+    
     
 def main():
     scats_df = pd.read_csv(
         'Resources/merged_data.csv'
     )
+
     interval_data = dataframe(scats_df)
+    unique_locations = find_lat_long_value(scats_df)
+    unique_locations.to_csv('Resources/scats_lat_lon_data.csv')
     chart_correlation_matrix(interval_data)
     interval_data.to_csv('Resources/interval_data.csv', index=False)
-    print(interval_data)
+    
 
 if __name__ == "__main__":
     main()
