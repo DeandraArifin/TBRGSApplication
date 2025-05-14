@@ -174,7 +174,7 @@ def prep_all_sites(hourly_data, model_type):
         print(f"Site {site}: MAE={mae:.2f}, MSE={mse:.2f}, R2={r2*100:.2f}%")
 
         # save model & metrics
-        keras.saving.save_model(model, 'my_model.keras')
+        keras.saving.save_model(model, f'models/{model_type}site{site}.h5')
         results.append((site, mae, mse, r2))
 
     return results
