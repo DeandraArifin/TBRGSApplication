@@ -2,23 +2,15 @@
 Per-site Model Training
 
 Trains one LSTM, GRU, and RNN per SCATS site
-A lot of this was copied from fawnmess.py with some changes
-For each site and model:
-  - Scales features
-  - Builds sliding-window sequences
-  - Splits into train/test
-  - Trains the model
-  - Inverts scaling for prediction
-  - Computes MAE, MSE, R²
-  - Saves the Keras model
-  - Collects metrics for CSV output
-  - Plots actual vs predicted with relative index
+...
+Adds pickling of each site's scaler into the 'scalers' folder.
 """
 import argparse
 import os
 import pandas as pd
 import numpy as np
 import math
+import pickle                              # ← new
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import keras
@@ -27,24 +19,24 @@ from tensorflow.keras.layers import LSTM, GRU, SimpleRNN, Dense, Conv1D, MaxPool
 from data_loader import load_interval_data, aggregate_hourly
 import matplotlib.pyplot as plt
 
-
 # CONFIG
 INTERVAL_CSV = "Resources/interval_data.csv"
 SEQ_LEN      = 24
 TRAIN_SPLIT  = 0.8
 MODEL_DIR    = "models"
 RESULTS_DIR  = "results"
+SCALER_DIR   = "scalers"                  # ← new
+
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # ensure directories exist
-for d in (MODEL_DIR, RESULTS_DIR):
+for d in (MODEL_DIR, RESULTS_DIR, SCALER_DIR):
     os.makedirs(d, exist_ok=True)
 
 def findspeed(flow):
     a = -1.4648375
     b = 93.75
     c = -flow
-
     discriminant = b**2 - 4*a*c
     if discriminant < 0:
         return None #no real solution found
@@ -52,7 +44,6 @@ def findspeed(flow):
     sqrt_disc = math.sqrt(discriminant)
     speed1 = (-b + sqrt_disc) / (2*a)
     speed2 = (-b - sqrt_disc) / (2*a)
-
     return max(speed1, speed2) if speed1 >= 0 and speed2 >= 0 else (speed1 if speed1 >= 0 else speed2)
 
 # preparing data for training
@@ -97,9 +88,10 @@ def train_site_models(model_type):
     os.makedirs(plot_dir, exist_ok=True)
 
     for site in sites:
-        df_site = hourly[hourly['SCATS Number']==site]
+        df_site = hourly[hourly['SCATS Number'] == site]
         if len(df_site) <= SEQ_LEN:
             continue
+
         X, y, scaler = prepare_site_data(df_site)
         split = int(len(X) * TRAIN_SPLIT)
         X_train, X_test = X[:split], X[split:]
@@ -134,16 +126,21 @@ def train_site_models(model_type):
         plt.savefig(plot_path)
         plt.close()
 
-        model_path = f"{MODEL_DIR}/{model_type}_site_{site}.h5"
+        # save model
+        model_path = os.path.join(MODEL_DIR, f"{model_type}_site_{site}.keras")
         keras.saving.save_model(model, model_path)
+
+        # save scaler
+        scaler_path = os.path.join(SCALER_DIR, f"{model_type}_site_{site}_scaler.pkl")
+        with open(scaler_path, 'wb') as f:
+            pickle.dump(scaler, f)
 
     # save metrics CSV
     dfm = pd.DataFrame(results, columns=['site','mae','mse','r2'])
-    metrics_path = f"{RESULTS_DIR}/{model_type}_metrics.csv"
+    metrics_path = os.path.join(RESULTS_DIR, f"{model_type}_metrics.csv")
     dfm.to_csv(metrics_path, index=False)
     print(f"Metrics saved to {metrics_path}")
 
-#  main entry, with argument parsing. to use python train_all_models.py --model lstm/gru/rnn CAN TRAIN ALL IN PARALLEL FOR TOTAL TRAIN TIME OF AROUND 3 MINUTES (on my machine)
 def main():
     parser = argparse.ArgumentParser(description="Train per-site flow models.")
     parser.add_argument("--model", type=str, choices=['lstm','gru','rnn'], required=True,
