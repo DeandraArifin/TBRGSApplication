@@ -33,19 +33,32 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 for d in (MODEL_DIR, RESULTS_DIR, SCALER_DIR):
     os.makedirs(d, exist_ok=True)
 
-def findspeed(flow):
+def find_speed(flow):
     a = -1.4648375
     b = 93.75
     c = -flow
+
     discriminant = b**2 - 4*a*c
     if discriminant < 0:
-        return None #no real solution found
-    
+        print(f"Invalid discriminant for flow={flow}")
+        return None
+
     sqrt_disc = math.sqrt(discriminant)
     speed1 = (-b + sqrt_disc) / (2*a)
     speed2 = (-b - sqrt_disc) / (2*a)
-    return max(speed1, speed2) if speed1 >= 0 and speed2 >= 0 else (speed1 if speed1 >= 0 else speed2)
 
+    valid_speeds = [s for s in (speed1, speed2) if s >= 0]
+    if not valid_speeds:
+        print(f"No valid positive speeds for flow={flow}, speeds={speed1}, {speed2}")
+        return None
+
+    chosen_speed = max(valid_speeds)
+
+    if flow <= 351:
+        return min(chosen_speed, 60)
+    else:
+        return chosen_speed
+    
 # preparing data for training
 flows15 = load_interval_data(INTERVAL_CSV)
 hourly  = aggregate_hourly(flows15)
