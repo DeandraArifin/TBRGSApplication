@@ -1,6 +1,7 @@
 import pandas as pd
 import tkinter as tk
 from tkintermapview import TkinterMapView
+from fm2eb import run_model
 
 def draw_markers(map_widget, scats_site_data):
    for _, row in scats_site_data.iterrows():
@@ -9,8 +10,11 @@ def draw_markers(map_widget, scats_site_data):
             row["NB_LONGITUDE"],
             text=f"{row['SCATS Number']}"
         )
-def draw_route(map_widget, path_coords):
-    map_widget.set_path(path_coords)
+def draw_route(map_widget, path_coords, colour):
+        
+    map_widget.set_path(path_coords, color=colour)
+    # line.color = colour
+    # line.update()
     
     lats = [coord[0] for coord in path_coords]
     lons = [coord[1] for coord in path_coords]
@@ -41,13 +45,28 @@ def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_
     selection_text.pack(anchor="w", pady=30)
     print(f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}")
     
-    #placeholder path, supposed to be dynamically retrieved
-    path = path = [
-    (scats_site_data.iloc[0]["NB_LATITUDE"], scats_site_data.iloc[0]["NB_LONGITUDE"]),
-    (scats_site_data.iloc[16]["NB_LATITUDE"], scats_site_data.iloc[16]["NB_LONGITUDE"]),
-    (scats_site_data.iloc[1]["NB_LATITUDE"], scats_site_data.iloc[1]["NB_LONGITUDE"])]
+    colours = ['red', 'blue', 'green', 'purple', 'yellow']
+    paths = run_model(origin, destination, time, model)
+    idx = 0
     
-    draw_route(map_widget, path)
+    if paths:
+        for idx, path in enumerate(paths):
+            path_coords = []
+            for path in paths:
+                if str(path[0]) != str(origin):
+                    path.insert(0, origin)
+                for node in path:
+                    scats_number = scats_site_data[scats_site_data['SCATS Number']. astype(str) == str(node)]
+                    if not scats_number.empty:
+                        lat = scats_number.iloc[0]['NB_LATITUDE']
+                        lon = scats_number.iloc[0]['NB_LONGITUDE']
+                        path_coords.append((lat, lon))   
+                colour = colours[idx % len(colours)]
+                draw_route(map_widget, path_coords, colour)
+                
+                idx+=1
+                    
+
     
 
 def main():
