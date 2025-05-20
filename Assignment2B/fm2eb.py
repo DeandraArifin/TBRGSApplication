@@ -60,7 +60,7 @@ def pathfind(i, ori, dest):
 
     return paths
 
-def write(G, origin, dest):
+def write(G, origin, dest): #method based on testcasegen.py from Assignment 2A
         directory = './Tests/'
         i = 0
         os.chdir(directory)
