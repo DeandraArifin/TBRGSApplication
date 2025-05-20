@@ -5,11 +5,13 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 from datetime import datetime, date, timedelta
 import pickle
 import networkx as nx
-import tensorflow as tf
+import keras
 from data_loader import load_interval_data, aggregate_hourly, load_site_coords
 from adjacency import adj
 from haversine import haversine
 from train_all_models import find_speed
+import search 
+import loadproblem
 
 # ── CONFIG ─────────────────────────────────────────────────
 DEFAULT_DATE       = date(2006, 10, 31)
@@ -24,6 +26,37 @@ MODEL_DIR          = "models"   # files: {model}_site_{site}.h5
 SCALER_DIR         = "scalers"  # files: {site}_scaler.pkl
 SEQ_LEN            = 24       # hours of history
 # ────────────────────────────────────────────────────────────
+
+def pathfind(i, ori, dest):
+    filename = f"Test_{ori}_to_{dest}_{i}.txt"
+    origin, destination, edges, nodes = loadproblem.loadproblem(filename)
+    adjaceny_list = search.convert_to_adjacency_list(loadproblem.edges)
+    ourGraph = search.Graph(adjaceny_list)
+    ourGraph.locations = loadproblem.nodes
+    k = 5
+    paths = []
+    for attempt in range(k):
+        copy_adj_list = {currnode: dict(nxtnode) for currnode, nxtnode in adjaceny_list.items()}
+        for idx, path in enumerate(paths): 
+            if len(path) > 1:
+                i = idx % (len(path) - 1)  # rotate which edge to remove
+                currnode, nxtnode = path[i], path[i+1]
+                if nxtnode in copy_adj_list.get(currnode, {}):
+                    del copy_adj_list[currnode][nxtnode]
+
+        ourGraph = search.Graph(copy_adj_list)
+        ourGraph.locations = nodes
+
+        result, explored, goal_state = search.runOurGraph(ourGraph, origin, destination, search.astar_search)
+        if not result or any(result == n for n in paths): #doesnt break but does skip the tried node
+            continue
+        paths.append(result) 
+        nodes_expanded = explored.union(result)
+        print(f"{filename} A* Search Path {attempt + 1}")
+        print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
+        print(origin, "->", " -> ".join(map(str, result)))
+    if not paths:
+        print("No paths found.")
 
 def write(G, origin, dest):
         directory = './Tests/'
@@ -47,7 +80,7 @@ def write(G, origin, dest):
             weight = data.get('weight')
             f.write(f"{cut}: {weight}\n")
         f.write(f"Origin:\n{origin}\nDestinations:\n{dest}")
-        os.chdir("..")
+        #os.chdir("..")
         return i
 
 def main():
@@ -65,8 +98,9 @@ def main():
     dep_time = datetime.combine(DEFAULT_DATE, t)
 
     # preload scalers & models
+    print("Loading models....")
     scalers = {site: pickle.load(open(f"{SCALER_DIR}/{args.model}_site_{site}_scaler.pkl","rb")) for site in adj}
-    models  = {site: tf.keras.models.load_model(f"{MODEL_DIR}/{args.model}_site_{site}.keras", compile=False)
+    models  = {site: keras.models.load_model(f"{MODEL_DIR}/{args.model}_site_{site}.keras", compile=False)
                for site in adj}
 
     # load & aggregate
@@ -139,8 +173,7 @@ def main():
             G.nodes[node]['pos'] = coords[u], coords[v]
 
     index = write(G, origin, dest)
-        
-
+    pathfind(index, origin, dest)
 
 
 if __name__=="__main__": main()
