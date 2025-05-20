@@ -37,11 +37,11 @@ def pathfind(i, ori, dest):
     paths = []
     for attempt in range(k):
         copy_adj_list = {currnode: dict(nxtnode) for currnode, nxtnode in adjaceny_list.items()}
-        for idx, path in enumerate(paths): 
-            if len(path) > 1:
-                i = idx % (len(path) - 1)  # rotate which edge to remove
-                currnode, nxtnode = path[i], path[i+1]
-                if nxtnode in copy_adj_list.get(currnode, {}):
+        for idx, path in enumerate(paths): #loops through list of paths
+            if len(path) > 1: #make sure the path has at least one edge
+                i = idx % (len(path) - 1)  # selects a node between 0 and len(path) - 2. % to rotate each edge between loops
+                currnode, nxtnode = path[i], path[i+1] 
+                if nxtnode in copy_adj_list.get(currnode, {}): #checks if they already exist in the copied list and removes them if it does
                     del copy_adj_list[currnode][nxtnode]
 
         ourGraph = search.Graph(copy_adj_list)
