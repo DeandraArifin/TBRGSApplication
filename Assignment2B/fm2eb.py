@@ -58,6 +58,8 @@ def pathfind(i, ori, dest):
     if not paths:
         print("No paths found.")
 
+    return paths
+
 def write(G, origin, dest):
         directory = './Tests/'
         i = 0
@@ -69,8 +71,6 @@ def write(G, origin, dest):
         for node in G.nodes():
             cut = G.nodes[node]['pos'][0]
             cut = str(cut).replace(" ", "")
-            # cut = cut.strip()
-            # cut = cut.replace(" ", "")
             f.write(f"{node}: {cut}\n")
         f.write(f"Edges: \n")
         for edge in G.edges(data=True):
@@ -80,27 +80,13 @@ def write(G, origin, dest):
             weight = data.get('weight')
             f.write(f"{cut}: {weight}\n")
         f.write(f"Origin:\n{origin}\nDestinations:\n{dest}")
-        #os.chdir("..")
         return i
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Estimate fastest travel time using per-site TensorFlow models"
-    )
-    parser.add_argument("--origin",      required=True)
-    parser.add_argument("--destination", required=True)
-    parser.add_argument("--time",        required=True)
-    parser.add_argument("--model",       default="gru", choices=["gru","lstm","rnn"])
-    args = parser.parse_args()
-
-    # parse departure time
-    t = datetime.strptime(args.time, "%H:%M").time()
-    dep_time = datetime.combine(DEFAULT_DATE, t)
-
+def load(model):
     # preload scalers & models
     print("Loading models....")
-    scalers = {site: pickle.load(open(f"{SCALER_DIR}/{args.model}_site_{site}_scaler.pkl","rb")) for site in adj}
-    models  = {site: keras.models.load_model(f"{MODEL_DIR}/{args.model}_site_{site}.keras", compile=False)
+    scalers = {site: pickle.load(open(f"{SCALER_DIR}/{model}_site_{site}_scaler.pkl","rb")) for site in adj}
+    models  = {site: keras.models.load_model(f"{MODEL_DIR}/{model}_site_{site}.keras", compile=False)
                for site in adj}
 
     # load & aggregate
@@ -109,8 +95,10 @@ def main():
     hourly  = aggregate_hourly(flows15)
     hourly["SCATS Number"] = hourly["SCATS Number"].astype(str)
 
-    # reachable set
-    origin, dest = args.origin, args.destination
+    return scalers, models, hourly
+
+def reachset(origin, dest):
+    # origin, dest = args.origin, args.destination
     if origin not in adj or dest not in adj:
         raise ValueError("Origin or destination not in adjacency list")
     reachable = {origin}; stack=[origin]
@@ -121,8 +109,10 @@ def main():
                 reachable.add(v); stack.append(v)
     if dest not in reachable:
         raise ValueError(f"No path from {origin} to {dest}")
-
-    # predict & speed
+    return reachable
+    
+def findspeed(scalers, models, hourly, dep_time, reachable):
+     # predict & speed
     speeds = {}
     start = dep_time - timedelta(hours=SEQ_LEN)
     FLOW_CAPACITY_15MIN = -B_CONST**2 / (4 * A_CONST)  # should equal ~1500 vehicles/15-min
@@ -156,8 +146,10 @@ def main():
         else:
             print(f"Site {site}: insufficient history ({len(hist)} rows), defaulting to speed limit")
             speeds[site] = SPEED_LIMIT
+    return speeds
 
-    # graph
+def graph(reachable, speeds):
+        # graph
     _, coords = load_site_coords()
     G=nx.DiGraph()
     for u in reachable:
@@ -171,9 +163,34 @@ def main():
     for node in G.nodes:
         if node in coords:
             G.nodes[node]['pos'] = coords[u], coords[v]
+    return G
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Estimate fastest travel time using per-site TensorFlow models"
+    )
+    parser.add_argument("--origin",      required=True)
+    parser.add_argument("--destination", required=True)
+    parser.add_argument("--time",        required=True)
+    parser.add_argument("--model",       default="gru", choices=["gru","lstm","rnn"])
+    args = parser.parse_args()
+
+    # parse departure time
+    t = datetime.strptime(args.time, "%H:%M").time()
+    dep_time = datetime.combine(DEFAULT_DATE, t)
+
+    origin, dest, model = args.origin, args.destination, args.model
+
+    scalers, models, hourly = load(model) 
+
+    reachable = reachset(origin, dest)
+
+    speeds = findspeed(scalers, models, hourly, dep_time, reachable)
+ 
+    G = graph(reachable, speeds)
 
     index = write(G, origin, dest)
-    pathfind(index, origin, dest)
 
+    paths = pathfind(index, origin, dest)
 
 if __name__=="__main__": main()
