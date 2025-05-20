@@ -165,6 +165,19 @@ def graph(reachable, speeds):
             G.nodes[node]['pos'] = coords[u], coords[v]
     return G
 
+#just takes arguments from the gui instead of the command line
+def run_model(origin, destination, time, model):
+    t = datetime.strptime(time, "%H:%M").time()
+    dep_time = datetime.combine(DEFAULT_DATE, t)
+    scalers, models, hourly = load(model.lower())
+    reachable = reachset(origin, destination)
+    speeds = findspeed(scalers, models, hourly, dep_time, reachable)
+    G = graph(reachable, speeds)
+    index = write(G, origin, destination)
+    paths = pathfind(index, origin, destination)
+    return paths
+    
+
 def main():
     parser = argparse.ArgumentParser(
         description="Estimate fastest travel time using per-site TensorFlow models"
