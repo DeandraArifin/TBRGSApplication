@@ -63,7 +63,7 @@ def pathfind(i, ori, dest):
 def write(G, origin, dest): #method based on testcasegen.py from Assignment 2A
         base_dir = os.path.dirname(os.path.abspath(__file__))
         directory = os.path.join(base_dir, "Tests")
-        # directory = './Tests/'
+        
         i = 0
         os.chdir(directory)
         while os.path.exists(f"Test_{origin}_to_{dest}_{i}.txt"):
