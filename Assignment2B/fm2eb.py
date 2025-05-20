@@ -74,8 +74,8 @@ def write(G, origin, dest):
             f.write(f"{node}: {cut}\n")
         f.write(f"Edges: \n")
         for edge in G.edges(data=True):
-            u, v, data = edge
-            cut = str((u, v)).replace(" ", "")
+            node1, node2, data = edge
+            cut = str((node1, node2)).replace(" ", "")
             cut = cut.replace("'", "")
             weight = data.get('weight')
             f.write(f"{cut}: {weight}\n")
