@@ -30,13 +30,13 @@ SEQ_LEN            = 24       # hours of history
 def pathfind(i, ori, dest):
     filename = f"Test_{ori}_to_{dest}_{i}.txt"
     origin, destination, edges, nodes = loadproblem.loadproblem(filename)
-    adjaceny_list = search.convert_to_adjacency_list(loadproblem.edges)
-    ourGraph = search.Graph(adjaceny_list)
+    adjacency_list = search.convert_to_adjacency_list(loadproblem.edges)
+    ourGraph = search.Graph(adjacency_list)
     ourGraph.locations = loadproblem.nodes
     k = 5
     paths = []
     for attempt in range(k):
-        copy_adj_list = {currnode: dict(nxtnode) for currnode, nxtnode in adjaceny_list.items()}
+        copy_adj_list = {currnode: dict(nxtnode) for currnode, nxtnode in adjacency_list.items()}
         for idx, path in enumerate(paths): #loops through list of paths
             if len(path) > 1: #make sure the path has at least one edge
                 i = idx % (len(path) - 1)  # selects a node between 0 and len(path) - 2. % to rotate each edge between loops
