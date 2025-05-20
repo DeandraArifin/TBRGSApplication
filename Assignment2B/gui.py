@@ -1,7 +1,17 @@
 import pandas as pd
 import tkinter as tk
 from tkintermapview import TkinterMapView
-from fm2eb import run_model
+from fm2eb import run_model, load
+from functools import partial
+
+drawn_paths = []
+scalers = models = hourly = None  
+        
+def on_model_select(event, model_opt):
+    global scalers, models, hourly
+    model_name = model_opt.get()
+    scalers, models, hourly = load(model_name)
+    print("Models loaded")
 
 def draw_markers(map_widget, scats_site_data):
    for _, row in scats_site_data.iterrows():
@@ -10,28 +20,48 @@ def draw_markers(map_widget, scats_site_data):
             row["NB_LONGITUDE"],
             text=f"{row['SCATS Number']}"
         )
+         
 def draw_route(map_widget, path_coords, colour):
+    
+    if not path_coords:
+        print("No valid coordinates for this path!")
         
-    map_widget.set_path(path_coords, color=colour)
-    # line.color = colour
-    # line.update()
+    line = map_widget.set_path(path_coords, color=colour)
     
     lats = [coord[0] for coord in path_coords]
     lons = [coord[1] for coord in path_coords]
 
-    # Calculate bounding box
-    top_left = (max(lats), min(lons))      # Most north, most west
-    bottom_right = (min(lats), max(lons))  # Most south, most east
+    #calculate bounding box
+    top_left = (max(lats), min(lons))      
+    bottom_right = (min(lats), max(lons))  
 
-    # Fit map view to bounding box
+    #zoom map to drawn paths
     map_widget.fit_bounding_box(top_left, bottom_right)
+    return line
 
-def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_opt, scats_site_data, error_text):
+def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_opt, scats_site_data, error_text, toggle_frame):
+    
+    global drawn_paths
+    
     origin = origin_opt.get()
     destination = dest_opt.get()
     time = time_opt.get()
     model = model_opt.get()
     
+    try:
+        if not all([scalers, models, hourly]):
+            raise ValueError("model not loaded yet.")
+        paths = run_model(origin, destination, time, model, scalers, models, hourly)
+        print(paths)  # Or show in GUI
+        
+    except Exception as e:
+        print(f"Error: {e}")
+    
+    print("ORIGIN:", origin)
+    print("DESTINATION:", destination)
+    print("TIME:", time)
+    print("MODEL:", model)
+
     if error_text.winfo_ismapped():
         error_text.pack_forget()
     
@@ -41,33 +71,85 @@ def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_
         print("All fields must be selected")
         return
     
-    selection_text = tk.Label(left_frame, text=f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}", font=('Arial', 20))
-    selection_text.pack(anchor="w", pady=30)
+    #clear any pre-existing paths
+    
+    
+    # selection_text = tk.Label(left_frame, text=f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}", font=('Arial', 20))
+    # selection_text.pack(anchor="w", pady=30)
     print(f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}")
     
     colours = ['red', 'blue', 'green', 'purple', 'yellow']
-    paths = run_model(origin, destination, time, model)
+    paths = run_model(origin, destination, time, model, scalers, models, hourly)
+    print(f"Returned paths: {paths}")
+    
+    paths = sorted(paths, key=len, reverse=True)
     idx = 0
     
     if paths:
         for idx, path in enumerate(paths):
             path_coords = []
-            for path in paths:
-                if str(path[0]) != str(origin):
-                    path.insert(0, origin)
-                for node in path:
-                    scats_number = scats_site_data[scats_site_data['SCATS Number']. astype(str) == str(node)]
-                    if not scats_number.empty:
-                        lat = scats_number.iloc[0]['NB_LATITUDE']
-                        lon = scats_number.iloc[0]['NB_LONGITUDE']
-                        path_coords.append((lat, lon))   
-                colour = colours[idx % len(colours)]
-                draw_route(map_widget, path_coords, colour)
+            if str(path[0]) != str(origin):
+                path.insert(0, origin)
+            for node in path:
+                scats_number = scats_site_data[scats_site_data['SCATS Number']. astype(str) == str(node)]
+                if not scats_number.empty:
+                    lat = scats_number.iloc[0]['NB_LATITUDE']
+                    lon = scats_number.iloc[0]['NB_LONGITUDE']
+                    path_coords.append((lat, lon))   
+            colour = colours[idx % len(colours)]
+            line = draw_route(map_widget, path_coords, colour)
+            
+            
+            visible_var = tk.BooleanVar(value=True)
+            
+            path_data = {
+                'path_coords': path_coords,
+                'color': colour,
+                'visible_var': visible_var,
+                'line': line,
+                'map_widget': map_widget
+            }
+            
+            
+            checkbox = tk.Checkbutton(toggle_frame, text=f"Path {idx+1}",
+                                      variable=visible_var,
+                                      command=partial(toggle_path_visibility, path_data))
+            
+            checkbox.pack(anchor='w')
+            drawn_paths.append(path_data)
+            
                 
-                idx+=1
+            idx+=1
                     
-
+def toggle_path_visibility(path_data):
+    if path_data['visible_var'].get():
+        #redraw the line if toggled on
+        new_line = path_data['map_widget'].set_path(path_data['path_coords'], color=path_data['color'])
+        path_data['line'] = new_line
+    else:
+        #remove the line if toggled off
+        path_data['line'].delete()
+        
+def on_reset(toggle_frame, origin_opt, dest_opt, time_opt, model_opt, error_text):
     
+    global drawn_paths
+    
+    for path in drawn_paths:
+        path['line'].delete()
+        
+    drawn_paths.clear()
+    
+    for widget in toggle_frame.winfo_children():
+        widget.destroy()
+    
+    origin_opt.set('')
+    dest_opt.set('')
+    time_opt.set('')
+    model_opt.set('')
+    
+    if error_text.winfo_ismapped():
+        error_text.pack_forget()
+        
 
 def main():
     window = tk.Tk()
@@ -118,12 +200,14 @@ def main():
     model_text.pack(anchor="w", pady=20)
     
     model_opt = tk.StringVar(value='')
+    model_opt.trace_add("write", lambda *args: on_model_select(None, model_opt))
     model_options = ['LSTM', 'GRU', 'RNN']
     model_option_menu = tk.OptionMenu(left_frame, model_opt, *model_options)
+    # model_option_menu.bind("<FocusOut>", lambda event: on_model_select(event, model_opt))
     model_option_menu.pack(anchor="w", pady=5)
-    
+
     error_text = tk.Label(left_frame, text="All fields must be selected", font=('Arial', 20))
-    button = tk.Button(left_frame, text="Find Route", command=lambda: on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_opt, scats_site_data, error_text)) #add command property, pass in the function to execute action
+    button = tk.Button(left_frame, text="Find Route", command=lambda: on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_opt, scats_site_data, error_text, toggle_frame)) #add command property, pass in the function to execute action
     button.pack(anchor="w", pady=30)
     
     map_widget = TkinterMapView(right_frame, width=900, height=600)
@@ -133,6 +217,12 @@ def main():
     map_center_y = scats_site_data['NB_LONGITUDE'].mean()
     map_widget.set_position(map_center_x, map_center_y)
     map_widget.set_zoom(13)
+    
+    toggle_frame = tk.Frame(map_widget)
+    toggle_frame.place(relx=0.01, rely=0.01)
+    
+    reset_button = tk.Button(left_frame, text="Reset", command=lambda: on_reset(toggle_frame, origin_opt, dest_opt, time_opt, model_opt, error_text))
+    reset_button.pack(anchor='w', pady=10)
     
     
     draw_markers(map_widget, scats_site_data)
