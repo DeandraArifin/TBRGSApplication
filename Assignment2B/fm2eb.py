@@ -175,6 +175,10 @@ def run_model(origin, destination, time, model):
     G = graph(reachable, speeds)
     index = write(G, origin, destination)
     paths = pathfind(index, origin, destination)
+    for path in paths:
+        if path[0] != origin:
+            path.insert(0,origin)
+            
     return paths
     
 
