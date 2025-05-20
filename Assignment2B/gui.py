@@ -48,15 +48,6 @@ def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_
     time = time_opt.get()
     model = model_opt.get()
     
-    try:
-        if not all([scalers, models, hourly]):
-            raise ValueError("model not loaded yet.")
-        paths = run_model(origin, destination, time, model, scalers, models, hourly)
-        print(paths)  # Or show in GUI
-        
-    except Exception as e:
-        print(f"Error: {e}")
-    
     print("ORIGIN:", origin)
     print("DESTINATION:", destination)
     print("TIME:", time)
@@ -71,11 +62,6 @@ def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_
         print("All fields must be selected")
         return
     
-    #clear any pre-existing paths
-    
-    
-    # selection_text = tk.Label(left_frame, text=f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}", font=('Arial', 20))
-    # selection_text.pack(anchor="w", pady=30)
     print(f"Origin: {origin}, Destination: {destination}, Time: {time}, Model: {model}")
     
     colours = ['red', 'blue', 'green', 'purple', 'yellow']
@@ -122,6 +108,7 @@ def on_find_route(left_frame, map_widget, origin_opt, dest_opt, time_opt, model_
             idx+=1
                     
 def toggle_path_visibility(path_data):
+    
     if path_data['visible_var'].get():
         #redraw the line if toggled on
         new_line = path_data['map_widget'].set_path(path_data['path_coords'], color=path_data['color'])
@@ -165,7 +152,7 @@ def main():
 
     window.geometry("1500x1000")
     window.title("Traffic-based Route Guidance Problem")
-    title = tk.Label(top_frame, text="Welcome", font=('Arial', 40))
+    title = tk.Label(top_frame, text="Plan Your Route", font=('Arial', 40))
     title.pack()
     
     scats_site_data = pd.read_csv('Resources/scats_lat_lon_data.csv')
@@ -203,7 +190,6 @@ def main():
     model_opt.trace_add("write", lambda *args: on_model_select(None, model_opt))
     model_options = ['LSTM', 'GRU', 'RNN']
     model_option_menu = tk.OptionMenu(left_frame, model_opt, *model_options)
-    # model_option_menu.bind("<FocusOut>", lambda event: on_model_select(event, model_opt))
     model_option_menu.pack(anchor="w", pady=5)
 
     error_text = tk.Label(left_frame, text="All fields must be selected", font=('Arial', 20))
@@ -219,14 +205,13 @@ def main():
     map_widget.set_zoom(13)
     
     toggle_frame = tk.Frame(map_widget)
-    toggle_frame.place(relx=0.01, rely=0.01)
+    toggle_frame.place(relx=0.95, rely=0.01)
     
     reset_button = tk.Button(left_frame, text="Reset", command=lambda: on_reset(toggle_frame, origin_opt, dest_opt, time_opt, model_opt, error_text))
     reset_button.pack(anchor='w', pady=10)
     
     
     draw_markers(map_widget, scats_site_data)
-    # draw_route(map_widget, path)
 
 
     window.mainloop()
