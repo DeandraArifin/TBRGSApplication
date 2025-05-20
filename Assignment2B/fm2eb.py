@@ -61,7 +61,9 @@ def pathfind(i, ori, dest):
     return paths
 
 def write(G, origin, dest): #method based on testcasegen.py from Assignment 2A
-        directory = './Tests/'
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        directory = os.path.join(base_dir, "Tests")
+        # directory = './Tests/'
         i = 0
         os.chdir(directory)
         while os.path.exists(f"Test_{origin}_to_{dest}_{i}.txt"):
@@ -166,10 +168,13 @@ def graph(reachable, speeds):
     return G
 
 #just takes arguments from the gui instead of the command line
-def run_model(origin, destination, time, model):
+def run_model(origin, destination, time, model, scalers, models, hourly):
     t = datetime.strptime(time, "%H:%M").time()
     dep_time = datetime.combine(DEFAULT_DATE, t)
-    scalers, models, hourly = load(model.lower())
+    
+    if scalers is None and models is None and hourly is None:
+        scalers, models, hourly = load(model.lower())
+        
     reachable = reachset(origin, destination)
     speeds = findspeed(scalers, models, hourly, dep_time, reachable)
     G = graph(reachable, speeds)
