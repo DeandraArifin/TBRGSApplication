@@ -235,7 +235,7 @@ def main():
     map_widget.set_zoom(13)
     
     toggle_frame = tk.Frame(map_widget)
-    toggle_frame.place(relx=0.95, rely=0.01)
+    toggle_frame.place(relx=0.85, rely=0.01)
     
     reset_button = tk.Button(left_frame, text="Reset", command=lambda: on_reset(toggle_frame, origin_opt, dest_opt, time_opt, model_opt, error_text, travel_time_label))
     reset_button.pack(anchor='w', pady=10)
