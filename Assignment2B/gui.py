@@ -1,7 +1,7 @@
 import pandas as pd
 import tkinter as tk
 from tkintermapview import TkinterMapView
-from fm2eb import run_model, load
+from pathfinder import run_model, load
 from functools import partial
 
 drawn_paths = []
