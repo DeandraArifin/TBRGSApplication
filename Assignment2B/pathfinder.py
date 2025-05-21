@@ -35,6 +35,7 @@ def pathfind(i, ori, dest, times):
     ourGraph.locations = loadproblem.nodes
     k = 5
     paths = []
+    pathtime = []
     for attempt in range(k):
         copy_adj_list = {currnode: dict(nxtnode) for currnode, nxtnode in adjacency_list.items()}
         for idx, path in enumerate(paths): #loops through list of paths
@@ -65,10 +66,11 @@ def pathfind(i, ori, dest, times):
             i += 1
         print(origin, "->", " -> ".join(map(str, result)))
         print(f"Total time of journey: {sum(timeadd)}mins")
+        pathtime.append(sum(timeadd))
     if not paths:
         print("No paths found.")
 
-    return paths
+    return paths, pathtime
 
 def write(G, origin, dest): #method based on testcasegen.py from Assignment 2A
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -191,12 +193,12 @@ def run_model(origin, destination, time, model, scalers, models, hourly):
     speeds = findspeed(scalers, models, hourly, dep_time, reachable)
     G, times = graph(reachable, speeds)
     index = write(G, origin, destination)
-    paths = pathfind(index, origin, destination)
+    paths, pathtimes = pathfind(index, origin, destination)
     for path in paths:
         if path[0] != origin:
             path.insert(0,origin)
             
-    return paths
+    return paths, pathtimes
     
 
 def main():
