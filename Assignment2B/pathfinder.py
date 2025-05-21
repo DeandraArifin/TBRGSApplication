@@ -27,6 +27,14 @@ SCALER_DIR         = "scalers"  # files: {site}_scaler.pkl
 SEQ_LEN            = 24       # hours of history
 # ────────────────────────────────────────────────────────────
 
+def converttime(time):
+    minutes = int(time)
+    seconds = (round((time - minutes) * 60)) / 100
+    time = (minutes + seconds)
+    time = "{:.2f}".format(time)
+    time = str(time)
+    return time
+
 def pathfind(i, ori, dest, times):
     filename = f"Test_{ori}_to_{dest}_{i}.txt"
     origin, destination, edges, nodes = loadproblem.loadproblem(filename)
@@ -65,8 +73,10 @@ def pathfind(i, ori, dest, times):
                 timeadd.append(float(times[f"{n},{result[i+1]}"]))
             i += 1
         print(origin, "->", " -> ".join(map(str, result)))
-        print(f"Total time of journey: {sum(timeadd)}mins")
-        pathtime.append(sum(timeadd))
+        toconvert = sum(timeadd)
+        time = converttime(toconvert)
+        print(f"Total time of journey: {time}mins")
+        pathtime.append(time)
     if not paths:
         print("No paths found.")
 
