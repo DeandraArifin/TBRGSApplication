@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import numpy as np
 import math
-import pickle                              # ← new
+import pickle                              
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import keras
@@ -25,14 +25,14 @@ SEQ_LEN      = 24
 TRAIN_SPLIT  = 0.8
 MODEL_DIR    = "models"
 RESULTS_DIR  = "results"
-SCALER_DIR   = "scalers"                  # ← new
-
+SCALER_DIR   = "scalers"                  
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # ensure directories exist
 for d in (MODEL_DIR, RESULTS_DIR, SCALER_DIR):
     os.makedirs(d, exist_ok=True)
 
+# function for finding speed from flow using the formula provided and applying constraints for free flow // congested flow
 def find_speed(flow):
     a = -1.4648375
     b = 93.75
@@ -59,7 +59,7 @@ def find_speed(flow):
     else:
         return chosen_speed
     
-# preparing data for training
+# loading data for training
 flows15 = load_interval_data(INTERVAL_CSV)
 hourly  = aggregate_hourly(flows15)
 sites   = hourly['SCATS Number'].unique()
@@ -76,7 +76,7 @@ def prepare_site_data(df_site, seq_len=SEQ_LEN):
         y.append(scaled[i+seq_len][0])
     return np.array(X), np.array(y), scaler
 
-# build the model, depending on type.
+# build the model, depending on type, uses indentical layers for all models so the only difference is the algorithm
 def build_model(model_type, input_shape):
     m = Sequential()
     m.add(Conv1D(128, 3, activation='relu', input_shape=input_shape))
@@ -104,21 +104,22 @@ def train_site_models(model_type):
         df_site = hourly[hourly['SCATS Number'] == site]
         if len(df_site) <= SEQ_LEN:
             continue
-
+        # splits the data into training and testing sets
         X, y, scaler = prepare_site_data(df_site)
         split = int(len(X) * TRAIN_SPLIT)
         X_train, X_test = X[:split], X[split:]
         y_train, y_test = y[:split], y[split:]
-
+        # building and fitting model
         model = build_model(model_type, (SEQ_LEN, 1))
         model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=0)
-
+        # evaluate model
         pred = model.predict(X_test)
         pad_pred = np.pad(pred, ((0,0),(0,0)), 'constant')
         inv_pred = scaler.inverse_transform(pad_pred)[:,0]
         act = y_test.reshape(-1,1)
         inv_act = scaler.inverse_transform(act)[:,0]
 
+        # calculate metrics
         mae = mean_absolute_error(inv_act, inv_pred)
         mse = mean_squared_error(inv_act, inv_pred)
         r2  = r2_score(inv_act, inv_pred)
@@ -154,6 +155,7 @@ def train_site_models(model_type):
     dfm.to_csv(metrics_path, index=False)
     print(f"Metrics saved to {metrics_path}")
 
+    # main entry
 def main():
     parser = argparse.ArgumentParser(description="Train per-site flow models.")
     parser.add_argument("--model", type=str, choices=['lstm','gru','rnn'], required=True,
