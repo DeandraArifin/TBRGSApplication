@@ -27,7 +27,7 @@ SCALER_DIR         = "scalers"  # files: {site}_scaler.pkl
 SEQ_LEN            = 24       # hours of history
 # ────────────────────────────────────────────────────────────
 
-def pathfind(i, ori, dest):
+def pathfind(i, ori, dest, times):
     filename = f"Test_{ori}_to_{dest}_{i}.txt"
     origin, destination, edges, nodes = loadproblem.loadproblem(filename)
     adjacency_list = search.convert_to_adjacency_list(loadproblem.edges)
@@ -54,7 +54,17 @@ def pathfind(i, ori, dest):
         nodes_expanded = explored.union(result)
         print(f"{filename} A* Search Path {attempt + 1}")
         print(f"goal = {goal_state}, number_of_nodes = {len(nodes_expanded)}")
+        timeadd = []
+        timeadd.append(float(times[f"{origin},{result[0]}"]))
+        i = 0
+        #print(f"{origin} + {result[0]} = {times[f"{origin},{result[0]}"]}")
+        for n in result:
+            if 0 <= i+1 < len(result):
+                #print(f"{n} + {result[i+1]} = {times[f"{n},{result[i+1]}"]}")
+                timeadd.append(float(times[f"{n},{result[i+1]}"]))
+            i += 1
         print(origin, "->", " -> ".join(map(str, result)))
+        print(f"Total time of journey: {sum(timeadd)}mins")
     if not paths:
         print("No paths found.")
 
@@ -153,6 +163,7 @@ def findspeed(scalers, models, hourly, dep_time, reachable):
 def graph(reachable, speeds):
         # graph
     _, coords = load_site_coords()
+    times = dict()
     G=nx.DiGraph()
     for u in reachable:
         for v in adj[u]:
@@ -160,12 +171,13 @@ def graph(reachable, speeds):
                 d = haversine(coords[u],coords[v])
                 spd = speeds.get(u,SPEED_LIMIT)
                 tt = d/spd*3600 + INTERSECTION_DELAY
+                times.update({f"{u},{v}": f"{tt/60:.2f}"})
                 print(f"Edge {u}->{v}: {d:.2f}km, {tt/60:.2f}min")
                 G.add_edge(u,v,weight=tt)
     for node in G.nodes:
         if node in coords:
             G.nodes[node]['pos'] = coords[u], coords[v]
-    return G
+    return G, times
 
 #just takes arguments from the gui instead of the command line
 def run_model(origin, destination, time, model, scalers, models, hourly):
@@ -177,7 +189,7 @@ def run_model(origin, destination, time, model, scalers, models, hourly):
         
     reachable = reachset(origin, destination)
     speeds = findspeed(scalers, models, hourly, dep_time, reachable)
-    G = graph(reachable, speeds)
+    G, times = graph(reachable, speeds)
     index = write(G, origin, destination)
     paths = pathfind(index, origin, destination)
     for path in paths:
@@ -209,10 +221,10 @@ def main():
 
     speeds = findspeed(scalers, models, hourly, dep_time, reachable)
  
-    G = graph(reachable, speeds)
+    G, times = graph(reachable, speeds)
 
     index = write(G, origin, dest)
 
-    paths = pathfind(index, origin, dest)
+    paths = pathfind(index, origin, dest, times)
 
 if __name__=="__main__": main()
