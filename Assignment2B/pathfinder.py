@@ -193,7 +193,7 @@ def run_model(origin, destination, time, model, scalers, models, hourly):
     speeds = findspeed(scalers, models, hourly, dep_time, reachable)
     G, times = graph(reachable, speeds)
     index = write(G, origin, destination)
-    paths, pathtimes = pathfind(index, origin, destination)
+    paths, pathtimes = pathfind(index, origin, destination, times)
     for path in paths:
         if path[0] != origin:
             path.insert(0,origin)
